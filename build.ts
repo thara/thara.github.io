@@ -117,12 +117,16 @@ async function buildPosts(postsDir: string, dstDir: string, config: Config) {
 
 type TemplatePathMap = Map<string, string>;
 
+function ext(extname: string) {
+  return (e: Deno.DirEntry) => {
+    !e.isSymlink && !e.isDirectory && path.extname(e.name) == extname;
+  };
+}
+
 async function getTemplatePathMap(templateDir: string) {
   const entries = Deno.readDirSync(templateDir);
   const templates = Array.from(entries)
-    .filter((e) =>
-      !e.isSymlink && !e.isDirectory && path.extname(e.name) == ".ejs"
-    )
+    .filter(ext(".ejs"))
     .map((e) => {
       const p = path.join(templateDir, e.name);
       const { name } = path.parse(p);
@@ -134,10 +138,8 @@ async function getTemplatePathMap(templateDir: string) {
 async function buildPages(config: Config, templates: TemplatePathMap) {
   const entries = Array.from(fs.walkSync(srcRoot));
   const p = entries
-    .filter((e) =>
-      !e.isSymlink && !e.isDirectory && path.extname(e.name) == ".md" &&
-      !e.path.startsWith("posts/")
-    )
+    .filter(ext(".md"))
+    .filter((e) => !e.path.startsWith("posts/"))
     .map((e) => {
       const { name } = path.parse(e.path);
       const template = templates.get(name) ?? defaultTemplatePath;
