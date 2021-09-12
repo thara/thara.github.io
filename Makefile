@@ -1,7 +1,7 @@
 SRC := .
 DST := public
 
-.PHONY: build clean serve
+.PHONY: build fmt serve clean
 
 ifndef CI
 BUILD_OPTS=--base-url 'http://0.0.0.0:4507'
