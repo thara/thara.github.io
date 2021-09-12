@@ -49,8 +49,8 @@ async function main() {
 }
 
 function md2html(srcPath: string) {
-  const c = decoder.decode(Deno.readFileSync(srcPath));
-  return Marked.parse(c);
+  const s = decoder.decode(Deno.readFileSync(srcPath));
+  return Marked.parse(s);
 }
 
 function parsePageName(
@@ -58,6 +58,7 @@ function parsePageName(
 ): { date: string | null; pageName: string } {
   const date = name.substring(0, 10);
   try {
+    // e.g.: yyyy-MM-dd-XXXX -> {date: yyyy-MM-dd, pageName: "XXXX"}
     datetime.parse(date, "yyyy-MM-dd");
     return { date, pageName: name.substring(11) };
   } catch {
@@ -65,7 +66,8 @@ function parsePageName(
   }
 }
 
-function buildPagePath(srcPath: string, dstDir: string) {
+function toIndexPath(srcPath: string, dstDir: string) {
+  // e.g.: posts/yyyy-MM-dd-XXXX.md -> dst/posts/yyyy-MM-dd-XXXX/index.html
   const { name } = path.parse(srcPath);
   const { pageName } = parsePageName(name);
   const dir = path.join(dstDir, pageName);
@@ -73,17 +75,17 @@ function buildPagePath(srcPath: string, dstDir: string) {
   return { name: pageName, path: path.join(dir, "index.html") };
 }
 
-async function buildPage(
+async function writePage(
   dstPath: string,
   content: string,
   templatePath: string,
   config: dejs.Params,
 ) {
-  const c = await dejs.renderFileToString(templatePath, {
+  const s = await dejs.renderFileToString(templatePath, {
     content: content,
     ...config,
   });
-  await Deno.writeTextFile(dstPath, c);
+  await Deno.writeTextFile(dstPath, s);
 }
 
 interface Post {
@@ -103,8 +105,8 @@ async function buildPosts(postsDir: string, dstDir: string, config: Config) {
       const { title, date: pageDate } = meta;
       const { date } = parsePageName(e.name)!;
       const timestamp = pageDate ?? date;
-      const { name: dstName, path: dstPath } = buildPagePath(p, dstDir);
-      buildPage(dstPath, content, "templates/post.ejs", {
+      const { name: dstName, path: dstPath } = toIndexPath(p, dstDir);
+      writePage(dstPath, content, "templates/post.ejs", {
         pageTitle: title,
         pageCreatedDate: date,
         ...config,
@@ -147,8 +149,8 @@ async function buildPages(config: Config, templates: TemplatePathMap) {
       const { title, path: metaPath } = meta;
       const dstPath = metaPath
         ? path.join(dstRoot, metaPath)
-        : buildPagePath(e.path, dstRoot).path;
-      buildPage(dstPath, content, template, {
+        : toIndexPath(e.path, dstRoot).path;
+      writePage(dstPath, content, template, {
         pageTitle: title,
         ...config,
       });
