@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="<%= author %>">
+  <title><%= siteTitle %></title>
+  <link rel="stylesheet" href="<%= baseUrl %>/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="<%= baseUrl %>"><%= siteTitle %></a>
+    </h1>
+  </header>
+
+  <div role="main">
+    <article>
+<%- content %>
+    <div>
+      <h2>Posts</h2><% for (const p of posts) { %>
+      <ul>
+        <li>
+          <span><%- p.date %></span>: <a href="<%- p.path %>"><%= p.title %></a>
+        </li>
+      </ul><% } %>
+    </div>
+    </article>
+  </div>
+  <footer>
+  &copy; <%= year %> <%= author %>
+  </footer>
+</body>
+</html>
+
+
