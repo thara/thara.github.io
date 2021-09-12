@@ -1,7 +1,7 @@
 import * as path from "https://deno.land/std/path/mod.ts";
 import * as datetime from 'https://deno.land/std/datetime/mod.ts';
 import * as flags from "https://deno.land/std/flags/mod.ts";
-import { ensureDirSync, walk, copySync } from "https://deno.land/std/fs/mod.ts";
+import { ensureDirSync, walkSync, copySync } from "https://deno.land/std/fs/mod.ts";
 
 import { Marked } from 'https://deno.land/x/markdown@v2.0.0/mod.ts';
 import { renderToString, renderFileToString, Params } from "https://deno.land/x/dejs/mod.ts";
@@ -23,8 +23,6 @@ interface Args {
 const args = flags.parse(Deno.args) as Args;
 
 async function main() {
-  const templates = await getTemplatePathMap(templateDir);
-
   const baseUrl = args['base-url'] ?? args.b ?? "https://thara.github.io"
 
   const config: Config = {
@@ -36,32 +34,32 @@ async function main() {
 
   const postsSrc = path.join(srcRoot, "posts");
   const postsDst = path.join(dstRoot, "posts");
-
   ensureDirSync(postsSrc);
   ensureDirSync(postsDst);
 
+  const templates = await getTemplatePathMap(templateDir);
+
+  // posts
   const posts = await buildPosts(postsSrc, postsDst, config);
-
+  // other pages
   await buildPages({ posts: posts, ...config }, templates);
-
+  // assets
   copySync("css", path.join(dstRoot, "css"), { overwrite: true });
+  copySync("images", path.join(dstRoot, "images"), { overwrite: true });
 }
 
-async function md2html(srcPath: string) {
-  const content = decoder.decode(await Deno.readFile(srcPath));
-  return Marked.parse(content);
+function md2html(srcPath: string) {
+  const c = decoder.decode(Deno.readFileSync(srcPath));
+  return Marked.parse(c);
 }
 
 function parsePageName(name: string): {date: string | null, pageName: string} {
   const date = name.substring(0, 10);
   try {
     datetime.parse(date, "yyyy-MM-dd");
-    return {
-      date: date,
-      pageName: name.substring(11),
-    };
+    return { date, pageName: name.substring(11) };
   } catch {
-    return {date: null, pageName: name};
+    return { date: null, pageName: name};
   }
 }
 
@@ -85,87 +83,56 @@ interface Post {
 }
 
 async function buildPosts(postsDir: string, dstDir: string, config: Config) {
-  const entries = Deno.readDir(postsDir);
-
-  var posts: Post[] = [];
-  for await (const e of entries) {
-    if (e.isFile) {
+  const entries = Deno.readDirSync(postsDir);
+  const posts = Array.from(entries)
+    .filter((e) => e.isFile)
+    .map((e) => {
       const p = path.join(postsDir, e.name);
-      const { meta, content } = await md2html(p);
+      const { meta, content } = md2html(p);
       const { title, date: pageDate } = meta;
-
       const { date } = parsePageName(e.name)!;
-      if (!date) {
-        continue;
-      }
-
       const timestamp = pageDate ?? date;
-
       const { name: dstName, path: dstPath } = buildPagePath(p, dstDir);
-
-      await buildPage(dstPath, content, "templates/post.ejs", {
+      buildPage(dstPath, content, "templates/post.ejs", {
           pageTitle: title,
-          pageCreatedDate: date!,
+          pageCreatedDate: date,
           ...config
       });
-      posts.push({
-        timestamp: timestamp,
-        date: date!,
-        title: title,
-        path: path.join(postsDir, dstName),
-      });
-    }
-  }
-  return posts.sort(({timestamp: a}, {timestamp: b}) => a < b ? 1 : -1);
+      return { timestamp, title, date, path: path.join(postsDir, dstName)};
+    });
+  return (await Promise.all(posts)).sort(({timestamp: a}, {timestamp: b}) => a < b ? 1 : -1);
 }
 
-type TemplatePathMap = {[k: string]: string};
+type TemplatePathMap = Map<string, string>;
 
 async function getTemplatePathMap(templateDir: string) {
-  var m: TemplatePathMap = {};
-  for await (const e of Deno.readDir(templateDir)) {
-    if (e.isSymlink || e.isDirectory || path.extname(e.name) != ".ejs") {
-      continue;
-    }
-    const p = path.join(templateDir, e.name);
-    const { name } = path.parse(p);
-    m[name] = p;
-  }
-  return m;
+  const entries = Deno.readDirSync(templateDir);
+  const templates = Array.from(entries)
+    .filter((e) => !e.isSymlink && !e.isDirectory && path.extname(e.name) == ".ejs")
+    .map((e) => {
+      const p = path.join(templateDir, e.name);
+      const { name } = path.parse(p);
+      return [name, p] as [string, string];
+    });
+  return new Map(templates) as TemplatePathMap;
 }
 
 async function buildPages(config: Config, templates: TemplatePathMap) {
-  for await (const e of walk(srcRoot)) {
-    if (e.isSymlink || e.isDirectory || path.extname(e.name) != ".md" || e.path.startsWith("posts/")) {
-      continue;
-    }
-
-    switch (path.extname(e.name)) {
-      case ".md":
+  const entries = Array.from(walkSync(srcRoot));
+  const p = entries
+    .filter((e) => !e.isSymlink && !e.isDirectory && path.extname(e.name) == ".md" && !e.path.startsWith("posts/"))
+    .map((e) => {
         const { name } = path.parse(e.path);
-        const template = templates[name] ?? defaultTemplatePath;
-
-        const { meta, content } = await md2html(e.path);
+        const template = templates.get(name) ?? defaultTemplatePath;
+        const { meta, content } = md2html(e.path);
         const { title, path: metaPath } = meta;
-
-        const dstPath = (() => {
-          if (metaPath) {
-            return path.join(dstRoot, metaPath);
-          } else {
-            const { path: p } = buildPagePath(e.path, dstRoot);
-            return p;
-          }
-        })();
-
-        await buildPage(dstPath, content, template, {
+        const dstPath = metaPath ? path.join(dstRoot, metaPath) : buildPagePath(e.path, dstRoot).path;
+        buildPage(dstPath, content, template, {
           pageTitle: title,
           ...config
         });
-        break;
-      default:
-        continue;
-    }
-  }
+    });
+  await Promise.all(p);
 }
 
 if (import.meta.main) {
