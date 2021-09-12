@@ -119,7 +119,7 @@ type TemplatePathMap = Map<string, string>;
 
 function ext(extname: string) {
   return (e: Deno.DirEntry) => {
-    !e.isSymlink && !e.isDirectory && path.extname(e.name) == extname;
+    return !e.isSymlink && !e.isDirectory && path.extname(e.name) == extname;
   };
 }
 
