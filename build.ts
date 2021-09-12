@@ -68,8 +68,9 @@ function parsePageName(
 function buildPagePath(srcPath: string, dstDir: string) {
   const { name } = path.parse(srcPath);
   const { pageName } = parsePageName(name);
-  const dstPath = path.format({ dir: dstDir, name: pageName, ext: "" });
-  return { name: pageName, path: dstPath };
+  const dir = path.join(dstDir, pageName);
+  fs.ensureDirSync(dir);
+  return { name: pageName, path: path.join(dir, "index.html") };
 }
 
 async function buildPage(
