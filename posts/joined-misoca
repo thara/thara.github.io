@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>thara</title>
+  <link rel="stylesheet" href="https://thara.github.io/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="https://thara.github.io">thara</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>株式会社Misoca に転職した</h1>
+        <span>2018-07-02</span>
+    </div>
+    <article>
+
+<ul>
+<li>from: <a href="https://wonderpla.net/">ワンダープラネット株式会社</a> （2013/10～2018/6）[^1]
+<ul>
+<li>主にモバイルゲームのバックエンドを担当</li>
+</ul>
+</li>
+<li>to: <a href="https://info.misoca.jp/">株式会社Misoca</a> （2018/7～）
+<ul>
+<li>サーバーエンジニアとして従事する予定</li>
+</ul>
+</li>
+</ul>
+<p><blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">タイトルで煽らない、かしこまった見出しもつけない、ウィッシュリストのせない、東亜飯店張らない、fromとtoを両方書く。職場崩壊を暴露しない。キラキラしない。これが私の求める退職エントリです。</p>&mdash; laiso🇯🇵 (@laiso) <a href="https://twitter.com/laiso/status/892403727079923712?ref_src=twsrc%5Etfw">2017年8月1日</a></blockquote></p>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>市場調査目的でインストールしたゲーム全てを iPhone からアンインストールした。<br>もう曜日クエストやイベント追わなくて済むと思ったら開放感がある。<br>やはり自分にはガチャよりもPCでガッツリFPSが合っているようだ。<a href="プレイする時間があるとは言ってない">^2</a>  </p>
+<p>[^1]: 最終出社は 5/25 で、残りは連続休暇(任意の時期に5連休取れる制度) + 有給消化</p>
+
+    </article>
+  </div>
+  <footer>
+  &copy; 2021 Tomochika Hara
+  </footer>
+</body>
+</html>

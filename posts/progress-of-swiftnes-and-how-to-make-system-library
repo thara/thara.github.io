@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>thara</title>
+  <link rel="stylesheet" href="https://thara.github.io/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="https://thara.github.io">thara</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>Swift製ファミコンエミュレータの進捗、そしてCライブラリへのSwiftバインディング開発の一例</h1>
+        <span>2019-12-23</span>
+    </div>
+    <article>
+<p>Misocaの <a href="https://twitter.com/zetta1985">thara</a> です。<br>この記事は <a href="https://qiita.com/advent-calendar/2019/misoca-yayoi">Misoca+弥生 Advent Calendar 2019 - Qiita</a> 23日目の記事です。
+遅くなってすみません...</p>
+<p>3ヶ月前にiOSDC Japan 2019にて <a href="https://fortee.jp/iosdc-japan-2019/proposal/92904657-beda-46fe-8ecb-b27c75ee0f16">Swiftでつくるファミコンエミュレータのススメ</a> というタイトルでLTをしてきました。</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/9pBPF77XQX0?start=1361" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<p>LTでは<a href="http://hp.vector.co.jp/authors/VA042397/nes/sample.html">NES研究室で配布されているHallo, WorldのサンプルROM</a> が動作したことをお伝えしました。
+あれから数ヶ月を経て、どれぐらいまで動くようになったのか、イベント会場でお話した「自分が子どもの頃にプレイしたゲームを自作エミュレータ上でプレイして、子どもの頃にクリアできなかったゲームをクリアしたい」という目標までどれぐらい近づいたのかをお伝えしたいと思います。</p>
+<h2 id="-">進捗</h2>
+<p>10月の半ばには、スーパーマリオブラザーズはプレイできるようになりました。</p>
+<p><blockquote class="twitter-tweet"><p lang="ja" dir="ltr">自作エミュレータでちゃんとマリオをプレイできるようになった（音はまだ無い） <a href="https://twitter.com/hashtag/nesdev?src=hash&amp;ref_src=twsrc%5Etfw">#nesdev</a> <a href="https://t.co/apuUo851BA">https://t.co/apuUo851BA</a> <a href="https://t.co/EYLbe3SqoF">pic.twitter.com/EYLbe3SqoF</a></p>&mdash; thara (@zetta1985) <a href="https://twitter.com/zetta1985/status/1183747534109343749?ref_src=twsrc%5Etfw">October 14, 2019</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+<p>↑のgifでは60FPS出ていないんですが、 これは録画ソフトがCPUリソースを持っていってしまってその影響でモッサリしているだけなので、ちゃんとエミュレータ単体では60FPS出てます。
+(色々試したんだけれど、Webブラウザ上でぬるぬる動く動画撮れなかった...)</p>
+<p>ここまで動いたら、あと残すは「音」です。</p>
+<h2 id="apu">APU</h2>
+<p>ファミコンではAPU（Audio Processing Unit）と呼ばれるマイクロプロセッサで、プログラムから動的に設定された値を元に矩形波や三角波などを生成し、音を生成しています。</p>
+<p>そもそもオーディオプログラミングの知識が皆無だった自分は，<a href="http://wiki.nesdev.com/w/index.php/APU">nesdev.comのAPU関連のwiki</a> を読み漁り、
+理解をコードに落とし込むかのように分周器やタイマー、エンベロープ・ジェネレータなどを細かく実装していきました。</p>
+<p>そもそも用語の意味さえ分からなかった自分は、ここでだいぶ時間を食いました。<a href="Courseraで機械学習系のコースを受講してたのが一番の要因の気もする...">^1</a></p>
+<p>さらに、実際に音を再生するためには何らかのクロスプラットフォーム対応されたライブラリを使う必要があります。
+Webブラウザ上で動作しているものは<a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a>を使用しており、自分はクロスプラットフォームのネイティブで動作するエミュレータを実装しているので参考になりません。</p>
+<p>C言語やC++製のファミコンエミュレータのコードを見てみるとSDL2のAudioを使っているものが多かったのですが <a href="http://atsushieno.hatenablog.com/entry/2017/12/07/041145">libsoundio-sharpとPInvokeGeneratorについて - ものがたり</a> を参考に、ソースコードが読みやすく、エラー関連のドキュメントがしっかり書かれた<a href="https://github.com/andrewrk/libsoundio">libsoundio</a>にチャレンジしてみました。</p>
+<p>当然のようにSwiftバインディングが存在しないので、Swiftから扱いやすくするためのバインディングを書くことにしました &lt;- イマココ</p>
+<h2 id="swift-">Swiftバインディングを少しずつ書いていく</h2>
+<p>言語バインディングと言うと難しい印象ですが、C言語製のライブラリをSwiftから扱うのは非常にかんたんです。   </p>
+<p>ただ単に使うぐらいであれば、Package.swiftの修正、modulemapという設定ファイル、ほんの数行のヘッダーファイルを用意するだけで、Swiftからそのライブラリの構造体や関数を直接使うことができます。</p>
+<p>以下は <a href="https://github.com/andrewrk/libsoundio#synopsis">libsoundioのREADME中のサンプルコード</a> とほぼ同じ処理をSwiftで書いたものです。</p>
+<script src="https://gist.github.com/thara/f1a4c725d8ef743c543a4e808b06db52.js?file=main.swift"></script>
+
+<p>たしかにSwiftからC言語の構造体や関数を直接使えていますが、このままだとさすがにSwiftのコードとしては読みづらいものがあります。
+<code>UnsafeMutablePointer</code> は普段はめったに使わないものですし、エラーコードが<code>CInt</code>として扱われていて扱いづらく、そもそも関数の命名規則がSwiftのそれとは違います。</p>
+<p>そこで、このmain.swiftをSwiftらしくすることを当面の目的として、徐々にSwiftバインディグのコードを書いていくことにします。</p>
+<h3 id="-swift-error-">エラーコードをSwiftでのErrorとして扱う</h3>
+<p>まず目につくのが、このようなエラーコード判定です。</p>
+
+<pre><code class="lang-swift">    var err: CInt = soundio_connect(soundio)
+    if 0 &lt; err {
+        fatalError(&quot;error connecting: \(soundioError(err))&quot;)
+    }
+</code></pre>
+<p>Swiftではエラー処理の方法に、Result, Error(いわゆる検査例外), fatalErrorなどといくつか方法がありますが、ライブラリ内でfatalErrorを発生させるのは不適切であり、さらに<a href="http://libsound.io/doc-2.0.0/soundio_8h.html#a9aed679ba44aaa7d9bcbe2fa1b1156c5">libsoundioのエラーコードの定義</a>を見るとアプリケーションがその後に復帰して継続可能なエラーの類はなさそうなので、Errorとして表現する方法を考えてみることにします。</p>
+
+<pre><code class="lang-swift">public struct SoundIOError: Error {
+   public let message: String
+
+   init(errorCode: CInt) {
+       self.message = String(cString: soundio_strerror(errorCode))
+   }
+}
+</code></pre>
+<p><a href="https://github.com/andrewrk/libsoundio/blob/b810bf2e9c4afc822c4843322cd08f7b36668109/src/soundio.c#L76-L96">soundio_strerror</a> は与えられたerrorCodeが既知のエラーコードでない場合には<code>(invalid error)</code>を返してくれるので、安心してこう書けます。</p>
+<p>そして、<code>CInt</code>がエラーコードである場合にエラーをthrowする拡張メソッドを追加します。</p>
+
+<pre><code class="lang-swift">//TODO Make internal
+public extension CInt {
+
+    @inline(__always)
+    func ensureSuccess() throws {
+        if 0 &lt; self {
+            throw SoundIOError(errorCode: self)
+        }
+    }
+}
+</code></pre>
+<p>ここではpublicとしていますが、これはmain.swiftを配置しているデモ用のビルドターゲットから一時的に呼び出すためのもので、最終的なライブラリの実装ではinternalとしてライブラリAPIとしては公開しないようにします。</p>
+<p>これで、main.swiftのエラーコードを扱っている箇所は、以下のように書けるようになりました。</p>
+
+<pre><code class="lang-diff">func main() {
++func main() throws {
+     // 略
+
+-     var err: CInt = soundio_connect(soundio)
+-     if 0 &lt; err {
+-         fatalError(&quot;error connecting: \(soundioError(err))&quot;)
+-     }
++     try soundio_connect(soundio).ensureSuccess()
+</code></pre>
+<h3 id="optional-unsafemutablepointer-nil-">Optional<UnsafeMutablePointer> がnilの場合のエラーを表現</h3>
+<p>次に気になるのが、各ポインタのnil（C言語でいうNULLポインタ）チェックの箇所です。</p>
+<p>このままOptionalとして扱ってもよいのですが、コードをより説明的にするために、これもErrorとして表現してみます。</p>
+
+<pre><code class="lang-swift">//TODO Make internal
+ public extension Optional {
+     @inline(__always)
+     func ensureAllocatedMemory() throws -&gt; Wrapped {
+         guard let value = self else {
+             throw SoundIOError(message: &quot;Ouf of memory: \(Wrapped.self)&quot;)
+         }
+         return value
+     }
+ }
+</code></pre>
+<p>こちらも後に非公開にするAPIとしておきます。</p>
+<p>これで、以下のようにnilチェックをErrorとして扱えるようになります。</p>
+
+<pre><code class="lang-diff">-    guard let soundio: UnsafeMutablePointer&lt;SoundIo&gt; = soundio_create() else {
+-        fatalError(&quot;out of memory&quot;)
+-    }
++    let soundio = try soundio_create().ensureAllocatedMemory()
+</code></pre>
+<h3 id="-">構造体をクラスで表現する</h3>
+<p>libsoundioで公開されている構造体は、その構造体のポインタを扱う関数とセットで扱う、つまりC言語とはいえ、オブジェクト指向で設計されたAPIです。
+よって、それらの構造体をSwiftではクラスで表現することを試みます。</p>
+<p>まず、構造体へのポインタをラップするクラスを定義します。</p>
+
+<pre><code class="lang-swift">import CSoundIO
+
+public class SoundIO {
+    private let internalPointer: UnsafeMutablePointer&lt;CSoundIO.SoundIo&gt;
+
+    public init() throws {
+         self.internalPointer = try soundio_create().ensureAllocatedMemory()
+    }
+
+    deinit {
+        soundio_destroy(internalPointer)
+    }
+}
+</code></pre>
+<p><code>CSoundIO.SoundIo</code> が<code>libsoundio</code> が公開している構造体です。
+ここで定義した<code>SoundIO</code>クラスはインスタンス生成時に<code>soundio_create</code>を呼び出して<code>CSoundIO.SoundIo</code>のポインタを取得・保持します。
+そして、<code>deinit</code> によって自身のインスタンスが破棄されるタイミングで適切に <code>soundio_destroy</code> を呼び出し、保持している<code>CSoundIO.SoundIo</code>のポインタを破棄します。</p>
+<p>ちなみに、deinitはクラスでしか使えないのでSwiftの構造体として<code>SoundIO</code>を定義することはできません。</p>
+<p>さらに、他の関数呼び出しも<code>SoundIO</code>のメソッドでラップします。</p>
+
+<pre><code class="lang-swift">    public func connect() throws {
+        try soundio_connect(self.internalPointer).ensureSuccess()
+    }
+
+    public func flushEvents() {
+        soundio_flush_events(self.internalPointer)
+    }
+</code></pre>
+<p>これで、以下のようなSwiftらしいコードが書けるようになります。</p>
+
+<pre><code class="lang-diff">-    let soundio = try soundio_create().ensureAllocatedMemory()
+-    try soundio_connect(soundio).ensureSuccess()
+-    soundio_flush_events(soundio)
++    let soundio = try SoundIO()
++    try soundio.connect()
++    soundio.flushEvents()
+</code></pre>
+<h3 id="-">型エイリアスで説明的にする</h3>
+<p><code>CSoundIO.SoundIo</code>構造体を扱う関数をメソッドにしていくうえで、以下のコードを書きました。</p>
+
+<pre><code class="lang-swift">    public func defaultOutputDeviceIndex() throws -&gt; CInt {
+        let index = soundio_default_output_device_index(self.internalPointer)
+        guard 0 &lt;= index else {
+            throw SoundIOError(message: &quot;No output device found&quot;)
+        }
+        return index
+    }
+
+    //TODO Wrap SoundIODevice
+    public func getOutputDevice(at index: CInt) throws -&gt; UnsafeMutablePointer&lt;CSoundIO.SoundIoDevice&gt; {
+        guard let device = soundio_get_output_device(self.internalPointer, index) else {
+            throw SoundIOError(message: &quot;invalid parameter value&quot;)
+        }
+        return device
+    }
+</code></pre>
+<p><code>soundio_default_output_device_index</code> の戻り値は、 <code>soundio_get_output_device</code> の引数として使っています。
+<code>CInt</code>のままだとそれがわからないので、型エイリアスを使って、よりメソッド間の関係がわかりやすいようにします。</p>
+
+<pre><code class="lang-swift">public typealias DeviceIndex = Int
+
+public class SoundIO {
+    // 略
+    public func defaultOutputDeviceIndex() throws -&gt; DeviceIndex {
+        let index = soundio_default_output_device_index(self.internalPointer)
+        guard 0 &lt;= index else {
+            throw SoundIOError(message: &quot;No output device found&quot;)
+        }
+        return DeviceIndex(index)
+    }
+
+    //TODO Wrap SoundIODevice
+    public func getOutputDevice(at index: DeviceIndex) throws -&gt; UnsafeMutablePointer&lt;CSoundIO.SoundIoDevice&gt; {
+        guard let device = soundio_get_output_device(self.internalPointer, index) else {
+            throw SoundIOError(message: &quot;invalid parameter value&quot;)
+        }
+        return device
+    }
+}
+</code></pre>
+<p>これで、ライブラリを扱うユーザーが誤った値を<code>getOutputDevice(at:)</code>に渡す可能性が減ります。 <a href="Swiftの型エイリアスはコンパイル時には削除されるので、あくまでもドキュメンテーションとライブラリユーザーへの説明のためのものです">^2</a></p>
+<h3 id="-">生のポインタを扱う余地を残す</h3>
+<p><code>CSoundIO.SoundIo</code>構造体を扱う関数を全て<code>SoundIO</code>クラスのメソッドとして定義したいところですが、このバインディングライブラリの保守の手間や元のライブラリの変更への追従を考えると、ライブラリユーザーにはある程度の柔軟性を持たせた方が良いことがあります。</p>
+<p>例えば、ライブラリユーザーは最新バージョンのライブラリで追加された関数を使いたいが、バインディングライブラリがその関数をサポートしておらず、かつ内部のポインタへのアクセスを完全にライブラリ内に閉じている場合、ライブラリユーザーはそのバインディングライブラリの使用を諦めるかforkするしか手がなくなってしまいます。</p>
+<p>よって、以下のような限定的なスコープで内部ポインタにアクセス可能な手段を提供します。</p>
+
+<pre><code class="lang-swift">    public func withInternalPointer(_ unsafeTask: (_ pointer: UnsafeMutablePointer&lt;CSoundIO.SoundIo&gt;) throws -&gt; Void) throws {
+        try unsafeTask(self.internalPointer)
+    }
+</code></pre>
+<p>このメソッドは以下のように使用できます。</p>
+
+<pre><code class="lang-swift">         try soundio.withInternalPointer {
+             soundio_wait_events($0)
+         }
+</code></pre>
+<p>もちろん、バインディングライブラリの意図しない変更をポインタに対して行われる可能性があるので、ライブラリユーザーに注意を促すドキュメントを残しておくと良さそうです。</p>
+<h2 id="soundio-">SoundIOクラスはほぼ完成</h2>
+<p>先程のmain.swift内で使っている<code>CSoundIO.SoundIo</code>とその関数を<code>SoundIO</code>クラスとして扱えるようになると 以下のように大部分をSwiftらしく書けるようになります。</p>
+
+<pre><code class="lang-swift">func main() throws {
+    let soundio = try SoundIO()
+    try soundio.connect()
+    soundio.flushEvents()
+
+    let outputDeviceIndex = try soundio.defaultOutputDeviceIndex()
+    let device = try soundio.getOutputDevice(at: outputDeviceIndex)
+    let deviceName = String(cString: device.pointee.name)
+    print(&quot;Output device: \(deviceName)&quot;)
+
+    let outstream = try soundio_outstream_create(device).ensureAllocatedMemory()
+    outstream.pointee.format = SoundIoFormatFloat32LE;
+    outstream.pointee.write_callback = writeCallback;
+
+    try soundio_outstream_open(outstream).ensureSuccess()
+    try outstream.pointee.layout_error.ensureSuccess()
+    try soundio_outstream_start(outstream).ensureSuccess()
+
+    while true {
+        soundio.waitEvents()
+    }
+
+    soundio_outstream_destroy(outstream)
+    soundio_device_unref(device)
+}
+</code></pre>
+<p>あとは<code>CSoundIO.SoundIoDevice</code>構造体や<code>CSoundIO.SoundIoOutStream</code>構造体などが残っていますが、今まで見てきたように徐々にラッパーを書いていくことで、バインディングライブラリを完成に近づけていけると思います。</p>
+<h2 id="swift-as-an-system-programming-language">Swift as an system programming language</h2>
+<p>ファミコンエミュレータ実装においてAPUを実装中であること、そして、そのAPU実装のためにlibsoundioのバインディングライブラリを徐々に開発していることをご紹介しました。</p>
+<p>Swiftは、Linux上でも動作するにも限らずiOSやmacOS上での開発言語としてしか注目を浴びていませんが、C言語との相互運用性やバインディングライブラリの書きやすさ、コンパイラによる最適化など、Rustまでは行かないものの、Go言語と同じぐらいのレイヤーまでは十分に対応できるポテンシャルを秘めていると自分は考えています。</p>
+<p>ファミコンエミュレータの実装、そしてCライブラリ向けのバインディングライブラリの実装を通じて、Swiftの可能性を広げていきたいです。</p>
+<hr>
+<p><a href="https://qiita.com/advent-calendar/2019/misoca-yayoi">Misoca+弥生 Advent Calendar 2019 - Qiita</a>、<br>次回24日は <a href="https://qiita.com/yayoi_ueshima">yayoi_ueshima</a>さんの「仮想通貨のやり取りを体感してみよう！」です。<br>お楽しみに！</p>
+<hr>
+
+    </article>
+  </div>
+  <footer>
+  &copy; 2021 Tomochika Hara
+  </footer>
+</body>
+</html>

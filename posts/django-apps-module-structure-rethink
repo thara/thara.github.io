@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>thara</title>
+  <link rel="stylesheet" href="https://thara.github.io/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="https://thara.github.io">thara</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>Djangoアプリケーションのモジュール構成再考</h1>
+        <span>2017-01-26</span>
+    </div>
+    <article>
+<p><a href="{% post_url 2016-12-09-module-configuration-of-django-app %}">以前のDjangoモジュール構成のpost</a> では、論理凝集度が高過すぎる感があって、もっと機能凝集度を高めたモジュール構成を考えてみた。<br>もちろんDjangoアプリケーションは細かく分けることを前提。</p>
+<p>以下、全体像を簡単に図示。</p>
+<p><img src="{{ site.url }}/images/django-app-structure.png" alt="Django App Structure"></p>
+<p>各要素を説明すると...</p>
+
+<ul>
+<li>View
+<ul>
+<li>DjangoのView定義</li>
+</ul>
+</li>
+<li>Model
+<ul>
+<li>Django Model定義</li>
+<li>他のModelへのクエリ/更新をしない</li>
+<li>Fat Modelにしない</li>
+</ul>
+</li>
+<li>Domain
+<ul>
+<li>機能単位のモジュール。機能を満たす関数やクラスを定義する。</li>
+<li>モジュール内には、さらに以下を定義する
+<ul>
+<li>Command
+<ul>
+<li>更新系ユースケースを表すアプリケーションサービス。Viewから使用。</li>
+</ul>
+</li>
+<li>Query
+<ul>
+<li>参照系ユースケースを表すアプリケーションサービス。Viewから使用。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Infrastructure
+<ul>
+<li>Domainの実装のうち、Redisやメール送信、Celeryなどの外部サービスのAPIを使用する実装を置く。</li>
+<li>DjangoのModelはInfrastructureの責務には <strong>含めない</strong>
+<ul>
+<li>フルスタックフレームワークを使用している以上、Django Modelへの依存を避けようとすると、フレームワークの良さを殺してしまう</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>以下、ファイル構造の一例。</p>
+
+<pre><code>social_game_api
+├── friend
+│   ├── models.py  (Model)
+│   ├── request.py (Domain)
+│   ├── request_tasks.py (Infrastructure: Celery)
+│   ├── urls.py
+│   └── views.py (View)
+└── user
+    ├── login.py (Domain)
+    ├── login_repos.py (Infrastructure: Redis)
+    ├── loginbonus.py (Domain)
+    ├── models.py (Model)
+    ├── profile.py (Domain)
+    ├── signup.py (Domain)
+    ├── urls.py
+    └── views.py (View)
+</code></pre>
+<p>モジュール名は <code>{Domain}_{Infrastructure type}</code> という法則にすることで、どのDomainのどのようなInfrastructureを使用するモジュールかが分かりやすくなる。<br>また、他のDjangoアプリケーションからアクセスできるのは、ModelsとDomainに限定する。<br>Domainでは、他のDomainを参照することにより循環参照になることがある。その場合は、関数やメソッド内でimportするか、別モジュールに切り出すなどして回避する。</p>
+<p>やっぱり、Simple is best.</p>
+
+    </article>
+  </div>
+  <footer>
+  &copy; 2021 Tomochika Hara
+  </footer>
+</body>
+</html>

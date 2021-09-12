@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>thara</title>
+  <link rel="stylesheet" href="https://thara.github.io/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="https://thara.github.io">thara</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>KotlinのIterable.unzipはPairのリストにしか対応していない</h1>
+        <span>2019-05-26</span>
+    </div>
+    <article>
+<p>タイトルの通り、 <a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/unzip.html">kotlin.collectionsのunzip</a> はPairのリスト（厳密に言うと <code>Array</code> と <code>Iterable</code> ）にしか対応していなかった。</p>
+<p>なので、 <code>Triple</code> 用のを定義した。
+まぁ <a href="https://github.com/JetBrains/kotlin/blob/deb416484c5128a6f4bc76c39a3d9878b38cec8c/libraries/stdlib/src/kotlin/collections/Iterables.kt#L83"><code>Iterable&lt;Pair&gt;#unzip</code></a> の定義をほとんど流用しているので、特に面白いことはない。</p>
+
+<pre><code>fun &lt;A, B, C&gt; Iterable&lt;Triple&lt;A, B, C&gt;&gt;.unzip(): Triple&lt;List&lt;A&gt;, List&lt;B&gt;, List&lt;C&gt;&gt; {
+    val listA = ArrayList&lt;A&gt;()
+    val listB = ArrayList&lt;B&gt;()
+    val listC = ArrayList&lt;C&gt;()
+    for (triple in this) {
+        listA.add(triple.first)
+        listB.add(triple.second)
+        listC.add(triple.third)
+    }
+    return Triple(listA, listB, listC)
+}
+</code></pre>
+<p><code>Iterable&lt;Iterable&lt;T&gt;&gt;#unzip</code> も作れると思うけど、内側のIterableの要素数足りないときにどうするのか決めないといけなくて、今は必要としていなかったので、特に考えてない。</p>
+<p>それにしても、なぜ <code>Iterable&lt;Pair&gt;#unzip</code> があって <code>Iterable&lt;Triple&gt;#unzip</code> が用意されていないのだろう？</p>
+<p><code>libraries/stdlib/src/kotlin/collections/Iterables.kt</code> をGit blameして、リファクタリング前のコミットを追ってみると、 <code>Iterable&lt;Pair&lt;T, R&gt;&gt;.unzip</code> が最初に実装されたのは <a href="https://github.com/JetBrains/kotlin/commit/da3ec891d0b476b26881bd122dcb63c24d42b711">このコミット</a> だった。</p>
+<p>もとのissueは<a href="https://youtrack.jetbrains.com/issue/KT-5793">KT-5793</a>。
+最初からTripleのことは考えられていなかったようだ。</p>
+<p><a href="https://github.com/JetBrains/kotlin/commit/8333448f10ef16de2fcc2868664176206db1fa55#diff-b3b2e95da541fae3f1e3d4139032c03e">このコミット</a> でPairとTripleは同時に入ったようなので、KT-5793の対応するときに単に <code>Triple</code> のことが忘れ去られていたか、その時必要ではなかったので後回しにされているか、だと思う。</p>
+<h2 id="next-action">Next Action</h2>
+<p>KotlinのSlackにjoinして聞いてみる。</p>
+
+    </article>
+  </div>
+  <footer>
+  &copy; 2021 Tomochika Hara
+  </footer>
+</body>
+</html>

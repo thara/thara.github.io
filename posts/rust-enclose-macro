@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>thara</title>
+  <link rel="stylesheet" href="https://thara.github.io/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="https://thara.github.io">thara</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>Rustのクロージャ内で外側のスコープのimmutableな変数をmutableな変数に同名で束縛したいときにつかうマクロ</h1>
+        <span>2019-04-30</span>
+    </div>
+    <article>
+<p>クロージャ内で外側のスコープの変数をmutableな変数に同名で束縛したいときに、外側の変数の不変に保つために、
+以下のようなマクロを使っている。</p>
+
+<pre><code class="lang-rust">macro_rules! enclose {
+    ( ($( $x:ident ),*) $y:expr ) =&gt; {
+        {
+            $(let mut $x = $x.clone();)*
+            $y
+        }
+    };
+}
+</code></pre>
+<p>以下のような感じで書ける。</p>
+
+<pre><code class="lang-rust">let sdk = agones::Sdk::new().map_err(|_| &quot;Could not connect to the sidecar. Exiting!&quot;)?;
+
+let _health = thread::spawn(enclose! {(sdk) move || {
+    loop {
+        match sdk.health() {
+            (s, Ok(_)) =&gt; {
+                println!(&quot;Health ping sent&quot;);
+                sdk = s;
+            },
+            (s, Err(e)) =&gt; {
+                println!(&quot;Health ping failed : {:?}&quot;, e);
+                sdk = s;
+            }
+        }
+        thread::sleep(Duration::from_secs(2));
+    }
+}});
+</code></pre>
+<p><code>thread::spawn</code> に渡しているクロージャ内では、sdk変数を特定の条件で再束縛しているため、sdk変数はmutableである必要がある。<br>マクロなしでmutableなsdk変数を作ろうとcloneしてしまうと、シャドウイングによって外側のスコープのimmutableなsdk変数を後続の処理で使うことができなくなってしまう。   </p>
+<p>上記の <code>enclose</code> マクロは、このシャドウイングを防止する。健全なマクロバンザイ。</p>
+<p>なお、自分はマクロ素人 &amp; ちょっと前のバージョンでこのマクロを使ったので、Rust2018ではもっといい方法があるかもしれない。
+あしからず。</p>
+
+    </article>
+  </div>
+  <footer>
+  &copy; 2021 Tomochika Hara
+  </footer>
+</body>
+</html>

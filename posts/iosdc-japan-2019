@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>thara</title>
+  <link rel="stylesheet" href="https://thara.github.io/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="https://thara.github.io">thara</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>iOSDC Japan 2019でファミコンエミュレータの話をしてきた</h1>
+        <span>2019-09-09</span>
+    </div>
+    <article>
+<p><blockquote class="twitter-tweet"><p lang="ja" dir="ltr">ファミコンの話をしに来た <a href="https://t.co/RS85vVnKTV">pic.twitter.com/RS85vVnKTV</a></p>&mdash; thara (@zetta1985) <a href="https://twitter.com/zetta1985/status/1169522707219660800?ref_src=twsrc%5Etfw">September 5, 2019</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> </p>
+<p>iOSDC Japan 2019に行って、 <a href="https://fortee.jp/iosdc-japan-2019/proposal/92904657-beda-46fe-8ecb-b27c75ee0f16">Swiftでつくるファミコンエミュレータのススメ</a> というタイトルでルーキーズ枠でLTをしてきた。</p>
+<p>「エミュレータの実装おもしろいから皆にも伝えたい」という気持ちと勢いだけでCfP出したのだけれど、まさか採択されるとは全く思っていなかったので、採択通知が来たときはめちゃビビった。</p>
+<p>技術カンファレンスの参加自体が初めてで100人を超える聴衆の前で発表する機会も経験がなかったので、少しでも発表への不安を解消したく、<a href="https://www.eventbrite.com/e/iosdc-japan-2018-lt-tickets-48515624539">ルーキーズLT練習会</a>に参加した。<br>おかげで内容と資料に対する不安がだいぶ解消されて、当日は満足のいく発表をすることができた。</p>
+<p>とはいえ、完全に練習通りではなくて、昨日までの練習ではまとめスライドの時点で残り30秒でその後はスッと流して終わるみたいな感じだったのだが、本番でやってみるとやはり早口だったのか、まとめの時点で1分弱残っていて最後のスライドで30秒使う必要性があった。<br>が、「時間余ったときはこうしゃべろうかな」って思っていたことをほぼそのまましゃべることができたので、うまくいった感がある。最後にちゃんとthanks ROMの説明ができたので、むしろ良かったかもしれない。</p>
+<p>発表終わった後に聞いてくれていた方に話しかけられたり、その後のお茶会などでも「おもしろかった」と言ってもらえりしたのでのでとても嬉しかった。</p>
+<p><a href="https://twitter.com/tomzoh">@tomzohさん</a> ほか、アドバイスくれた方に感謝したい。やはり、練習大事。</p>
+<p>ただ残念だったのはLT開始の2hぐらい前から緊張感が襲ってきて、他の方のセッションを聞く余裕が出なかったこと。気を散らすためにエミュレータのバグを直すべくコードいじっていたら、バグが取れてラスタスクロールができるようになって笑えた。LT直前では、会場のBGMが自分の鼓動とリンクするような感覚があって緊張感が増した。<br>個人的にクラシックとかジャズとかアンビエントとかのほうが落ち着くので、イヤホンすればよかったかもしれない。</p>
+<p>LT資料はSpeackerDeckにあげたけど、アニgif再生されないし口頭の説明で相当補っているので、いずれ公開されるであろう動画を見てほしい。</p>
+<script async class="speakerdeck-embed" data-id="84eb439d726940e0868477562859ddab" data-ratio="1.33333333333333" src="//speakerdeck.com/assets/embed.js"></script>
+
+<p>自分はiOSエンジニアとして仕事しているわけではないのだけれど、低レイヤーやゲームの話も多くて、とても楽しめた。</p>
+<p>来年もCfP出してみようかな。ネットワークスタッフも面白そうだ。</p>
+<hr>
+<p>LTを聞いてくださった方、ルーキーズLT練習会で出会った方、さらにはhakさんからもファミコンエミュレータ開発の応援を頂いた。 </p>
+<p>「自分が子どものころにクリアできなかったゲームを自作エミュレータ上でプレイしてクリアする」というゴールを達成できるようにがんばります。</p>
+
+    </article>
+  </div>
+  <footer>
+  &copy; 2021 Tomochika Hara
+  </footer>
+</body>
+</html>
