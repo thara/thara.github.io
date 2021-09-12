@@ -119,9 +119,8 @@ async function buildPosts(postsDir: string, dstDir: string, config: Config) {
 type TemplatePathMap = Map<string, string>;
 
 function ext(extname: string) {
-  return (e: Deno.DirEntry) => {
-    return !e.isSymlink && !e.isDirectory && path.extname(e.name) == extname;
-  };
+  return (e: Deno.DirEntry) =>
+    !e.isSymlink && !e.isDirectory && path.extname(e.name) == extname;
 }
 
 async function getTemplatePathMap(templateDir: string) {
