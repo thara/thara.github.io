@@ -1,6 +1,6 @@
 # thara.github.io
 
-My personal web site
+My personal web site, hosting at https://thara.dev
 
 [![build](https://github.com/thara/thara.github.io/actions/workflows/publish.yml/badge.svg)](https://github.com/thara/thara.github.io/actions/workflows/publish.yml)
 
