@@ -23,7 +23,7 @@ build and deploy automatially.
 - `main` branch (Source)
 - `gh-pages` branch (GitHub Pages)
 
-## Design
+## Note
 
 ### Markdown frontmatter
 
