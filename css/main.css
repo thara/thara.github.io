@@ -78,8 +78,8 @@ h6 {
   color: #777777;
   font-size: 14px; }
 
-p, blockquote, ul, ol, dl, li, table, pre {
-  margin: 15px 0; }
+/* p, blockquote, ul, ol, dl, li, table, pre { */
+/*   margin: 15px 0; } */
 
 hr {
   background: transparent url("https://raw.githubusercontent.com/gollum/gollum/master/lib/gollum/public/gollum/images/dirty-shade.png") repeat-x 0 0;
