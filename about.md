@@ -9,12 +9,14 @@ Software Engineer, Geek and Dad of twins in Aichi, Japan.
 - GitHub: [@thara](https://github.com/thara)
 - Blog: [Tomochika Hara's Blog](https://blog.thara.jp)
 - Twitter: [@zetta1985](https://twitter.com/zetta1985)
+- Twitch: [tharadev](https://twitch.tv/tharadev)
 - LinkedIn: [Tomochika Hara](https://www.linkedin.com/in/tomochikahara/)
 - Keybase: [thara](https://keybase.io/thara)
 
 ## My Projects
 
-- [SwiftNES](https://github.com/thara/SwiftNES): [WIP] Cross-platform NES Emulator written in Swift
+- [korones](https://github.com/thara/korones): [WIP] Cross-platform NES Emulator written in Rust
+- [SwiftNES](https://github.com/thara/SwiftNES): Cross-platform NES Emulator written in Swift
 - [erajp](https://github.com/thara/erajp): Japanese era converter for Rust
 - [rust_aliasmethod](https://github.com/thara/rust_aliasmethod): Implementation of Walker's Alias method in Rust
 
