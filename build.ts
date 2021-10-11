@@ -23,7 +23,7 @@ interface Args {
 const args = flags.parse(Deno.args) as Args;
 
 async function main() {
-  const baseUrl = args["base-url"] ?? args.b ?? "https://thara.github.io";
+  const baseUrl = args["base-url"] ?? args.b ?? "https://thara.dev";
 
   const config: Config = {
     author: "Tomochika Hara",
