@@ -1,7 +1,7 @@
 SRC := .
 DST := public
 
-.PHONY: build fmt serve clean
+.PHONY: build fmt serve clean post
 
 ifndef CI
 BUILD_OPTS=--base-url 'http://0.0.0.0:4507'
@@ -21,3 +21,7 @@ serve: bin/file_server
 
 clean:
 	rm -rf $(DST)/**
+
+post:
+	@read -p "post title: " title; \
+  (vim posts/`date +%Y-%m-%d`-$$title.md)
