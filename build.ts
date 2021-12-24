@@ -2,6 +2,7 @@ import * as path from "https://deno.land/std/path/mod.ts";
 import * as datetime from "https://deno.land/std/datetime/mod.ts";
 import * as flags from "https://deno.land/std/flags/mod.ts";
 import * as fs from "https://deno.land/std/fs/mod.ts";
+import {copySync} from "https://deno.land/std/fs/copy.ts";
 
 import { Marked } from "https://deno.land/x/markdown@v2.0.0/mod.ts";
 import * as dejs from "https://deno.land/x/dejs/mod.ts";
@@ -44,8 +45,8 @@ async function main() {
   // other pages
   await buildPages({ posts: posts, ...config }, templates);
   // assets
-  fs.copySync("css", path.join(dstRoot, "css"), { overwrite: true });
-  fs.copySync("images", path.join(dstRoot, "images"), { overwrite: true });
+  copySync("css", path.join(dstRoot, "css"), { overwrite: true });
+  copySync("images", path.join(dstRoot, "images"), { overwrite: true });
 }
 
 function md2html(srcPath: string) {
