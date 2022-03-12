@@ -28,7 +28,7 @@ async function main() {
 
   const config: Config = {
     author: "Tomochika Hara",
-    siteTitle: "thara",
+    siteTitle: "thara.dev",
     baseUrl: baseUrl,
     year: datetime.format(new Date(), "yyyy"),
   };

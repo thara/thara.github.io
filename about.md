@@ -1,5 +1,5 @@
 ---
-title: Tomochika Hara
+title: About
 ---
 
 Software Engineer, Geek and Dad of twins in Aichi, Japan.
