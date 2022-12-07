@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-const baseURL string = "http://localhost:8080"
-
 var templates map[string]*template.Template
 var defaultTemplate *template.Template
 

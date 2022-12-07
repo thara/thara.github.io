@@ -16,9 +16,11 @@ import (
 const distDirRoot string = "public"
 
 var serve bool
+var baseURL string
 
 func init() {
 	flag.BoolVar(&serve, "serve", false, "serves the site locally.")
+	flag.StringVar(&baseURL, "base", "http://localhost:8080", "base URL")
 }
 
 func main() {

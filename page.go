@@ -118,7 +118,15 @@ func loadPage(filename, parent, distDir string, page *Page) error {
 }
 
 func (p *Page) write(t *template.Template) error {
-	dist, err := os.Create(p.distPath)
+	path := p.distPath
+	if !strings.HasSuffix(p.distPath, ".html") {
+		if err := os.Mkdir(path, os.ModePerm); err != nil {
+			return fmt.Errorf("fail to mkdir %s: %v", path, err)
+		}
+
+		path = filepath.Join(path, "index.html")
+	}
+	dist, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("fail to create %s: %v ", p.distPath, err)
 	}
