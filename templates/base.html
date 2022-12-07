@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  {{ template "head" . }}
+</head>
+<body>
+  <header>
+    <h1>{{.PageTitle}}</h1>
+  </header>
+  <div role="main">
+    <article>
+    {{ .Content }}
+    </article>
+  </div>
+  {{ template "footer" . }}
+</body>
+</html>
