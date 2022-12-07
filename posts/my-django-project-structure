@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="thara">
+  <title>個人的によく採用するDjangoプロジェクト構成 | thara.dev</title>
+  <link rel="stylesheet" href="http://localhost:8080/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="http://localhost:8080">thara.dev</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>個人的によく採用するDjangoプロジェクト構成</h1>
+      <span>2016-10-07</span>
+    </div>
+    <article>
+    <h2>2018-01-14追記</h2>
+<p>この記事の意見は、2018-01-14 現在の見解とは異なります。<br>
+最新の見解は [こちら]({{ site.baseurl }}{% post_url 2018-01-14-rethink-django-project-structure %}) を参照してください。</p>
+<hr>
+<p><a href="https://www.djangoproject.com/">Django</a> を実際にプロダクトで使用するとなると、まずプロジェクト構成をどうするか、という問題にぶち当たる。</p>
+<p>ここでいう プロジェクト構成とは以下を指す。</p>
+<ul>
+<li>Djangoプロジェクトのディレクトリ構成</li>
+<li>Djangoアプリケーションの単位・ファイル構成</li>
+<li>settings管理方法</li>
+<li>各Djangoアプリケーションごとの内部構成</li>
+</ul>
+<p>現在の自分の意見をまとめてみると、こんな感じ</p>
+<pre><code>├── sampleapp
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── sampleapp_foo
+│   ├── models.py
+│   ├── urls.py
+│   └── views.py
+├── sampleapp_bar
+│   ├── models.py
+│   ├── urls.py
+│   └── views.py
+├── manage.py
+├── requirements.txt
+└── setup.py
+
+</code></pre>
+<p>ルートは作業ツリーのルートと同じ = READMEを置くところ。<br>
+<code>sampleapp</code> がいわゆるプロジェクト名で、その配下にプロジェクトの設定をおいておく。<br>
+settings.pyは複数環境に対応できるよう、データベースの接続先URLなどの環境ごとに異なる値は環境変数から取得するようにする。</p>
+<p><code>sampleapp/urls.py</code> にURLパターンを記述していくが、基本的に他のDjangoアプリケーションの <code>urls.py</code> を読み込むだけにしておく。</p>
+<p><code>sampleapp_foo</code> がいわゆるDjangoアプリケーション。
+モジュール名の重複を避けるため<code>{プロジェクト名}_XXXX</code> みたいな感じにしている。基本的に、<strong>機能</strong>単位で作成し、機能的凝集を高める。（自然とbase URLのサブディレクトリごとになることが多い）</p>
+<p>Djangoアプリケーションの配置場所には、
+<code>sampleapp/foo</code> とか <code>apps/foo</code> とか <code>sampleapp/apps/foo</code> とか、いろいろ流儀はあるようだが、</p>
+<ul>
+<li>Djangoアプリケーションはそれぞれで機能的に独立していることが望ましい</li>
+<li>Pythonではネストの深いパッケージはあまり見かけない</li>
+<li>Djangoアプリケーションは機能追加によりどんどん増えていく</li>
+</ul>
+<p>という観点から <code>sampleapp_foo</code> にしている。
+次点で、<code>sampleapp/foo</code>。</p>
+<p>最初は作業ツリー直下に <code>sampleapp_XXX</code> が増えていくのに抵抗があったが、今は慣れた。なにより目的のファイルを見つけやすいことが嬉しい。</p>
+<p>models.pyは、大きくなったら <code>models/XXX.py</code> みたいにmodelsディレクトリ作って、分割。<code>models/__init__.py</code> 内でmodelのクラスをimportして、Djangoから認識されるようにする。</p>
+<p>だいたいこんな感じ。
+これから更に、Djangoアプリケーション内でどのようにもジョールを定義していくか、という問題があるけれど、それはまた今度・・・</p>
+
+    </article>
+  </div>
+  <footer>
+  <small>
+    <a href="http://localhost:8080">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="http://localhost:8080/about">About</a>
+    | <a href="http://localhost:8080/resume-ja">Resume(ja)</a>
+    | &copy; 2022 thara
+  </small>
+</footer>
+</body>
+</html>
+

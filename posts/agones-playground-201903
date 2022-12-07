@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="thara">
+  <title>Agones動作確認 2019-03現在 | thara.dev</title>
+  <link rel="stylesheet" href="http://localhost:8080/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="http://localhost:8080">thara.dev</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>Agones動作確認 2019-03現在</h1>
+      <span>2019-03-31</span>
+    </div>
+    <article>
+    <p>久しぶりにAgonesを調べてみたら、<a href="https://agones.dev/site/">Webサイト</a> ができていた。</p>
+<p>Agones本体も、ゲームサーバーの情報が得られるようになっていたり、Node.jsのSDKをサポートしたりと色々変わっていたので、Agonesの最新をローカルで動かそうと思ったが、予想以上にハマってしまったので、
+[以前のAgones紹介記事]({{ site.baseurl }}{% post_url 2018-06-26-agones-introduction %}) と少しかぶってしまうが、2019-03現段階でのサンプルを動かすまでをメモっておく。</p>
+<h2>Agonesのインストール方法</h2>
+<p>Agonesのインストール方法には、 Google Kubernetes Engine (GKE)を使うか、Minikubeを使うか、Amazon Web Services EKSを使うかの大きく3通りがあるが、自分は動作確認がしたいだけなので、Minikubeを選択する。
+その他2つは、まだ試してない。</p>
+<p>MinikubeではVMドライバを選択できるが、公式の<a href="https://agones.dev/site/docs/installation/#setting-up-a-minikube-cluster">Installation</a>どおり、VirtualBoxを使ったほうが変にハマらなくて済むと思う。<br>
+このとき、VirtualBoxは最新のバージョンに更新しておいた方がよい。
+自分はVirtualBoxのバージョンが古くて、後述のセットアップコマンドが正常に動作しなかったので、VirtualBoxのバージョンを更新して <code>6.0.4 r128413</code> にした。</p>
+<p>そして、もう一つ決めておいた方がよいのが、<code>kubectl apply -f</code> に渡すinstall.yamlをどれにするか。
+これは、Agonesの動作確認をどのような用途で行いたいかによる。</p>
+<p>単に、Agonesというサービスを手元で動作確認したいだけであれば、公式ドキュメントのとおり、GitHubリポジトリ上においてある <code>install/yaml/install.yaml</code> を使えばよい。</p>
+<p>自分のようにsimple-udpなどのサンプルだけではなく、SDK周りのサンプルを触ってみたい場合は、Agonesリポジトリをgit cloneした上で、その作業ツリー上の <code>install/yaml/install.yaml</code> を使う。</p>
+<p>このとき、masterではなく、リリースブランチを使用した方がよい。<br>
+masterのinstall.yml内のテンプレートに用いるimageが、Agonesが使用するDockerレジストリ(<code>gcr.io/agones-images</code>)上にまだデプロイされていないことがあるからだ。
+<a href="https://github.com/GoogleCloudPlatform/agones/blob/master/build/README.md">開発者向けREADME</a>通りにやれば自分でイメージをビルドしてAgonesを立ち上げることもできるが、
+かなりの遠回りになるので、Agones自体の開発にコントリビュートしたいのでなければ避けておいた方が無難だ。</p>
+<pre><code class="language-bash">$ git clone https://github.com/GoogleCloudPlatform/agones.git &amp;&amp; cd agones &amp;&amp; git checkout release-0.9.0-rc
+
+$ minikube profile agones
+-   minikube profile was successfully set to agones
+
+$ minikube start --kubernetes-version v1.11.0 --vm-driver virtualbox \
+		--extra-config=apiserver.authorization-mode=RBAC
+o   minikube v0.35.0 on darwin (amd64)
+&gt;   Creating virtualbox VM (CPUs=2, Memory=2048MB, Disk=20000MB) ...
+-   &quot;agones&quot; IP address is 192.168.99.102
+-   Configuring Docker as the container runtime ...
+-   Preparing Kubernetes environment ...
+    - apiserver.authorization-mode=RBAC
+-   Pulling images required by Kubernetes v1.11.0 ...
+-   Launching Kubernetes v1.11.0 using kubeadm ...
+:   Waiting for pods: apiserver proxy etcd scheduler controller addon-manager dns
+-   Configuring cluster permissions ...
+-   Verifying component health .....
++   kubectl is now configured to use &quot;agones&quot;
+=   Done! Thank you for using minikube!
+
+$ kubectl create clusterrolebinding cluster-admin-binding \
+  --clusterrole=cluster-admin --serviceaccount=kube-system:default
+clusterrolebinding.rbac.authorization.k8s.io &quot;cluster-admin-binding&quot; created
+
+$ kubectl create namespace agones-system
+namespace &quot;agones-system&quot; created
+
+$ kubectl apply -f install/yaml/install.yaml
+serviceaccount &quot;agones-controller&quot; created
+clusterrole.rbac.authorization.k8s.io &quot;agones-controller&quot; created
+clusterrolebinding.rbac.authorization.k8s.io &quot;agones-controller-access&quot; created
+serviceaccount &quot;agones-sdk&quot; created
+clusterrole.rbac.authorization.k8s.io &quot;agones-sdk&quot; created
+rolebinding.rbac.authorization.k8s.io &quot;agones-sdk-access&quot; created
+customresourcedefinition.apiextensions.k8s.io &quot;fleets.stable.agones.dev&quot; created
+customresourcedefinition.apiextensions.k8s.io &quot;fleetallocations.stable.agones.dev&quot; created
+customresourcedefinition.apiextensions.k8s.io &quot;fleetautoscalers.stable.agones.dev&quot; created
+customresourcedefinition.apiextensions.k8s.io &quot;gameservers.stable.agones.dev&quot; created
+customresourcedefinition.apiextensions.k8s.io &quot;gameserverallocations.stable.agones.dev&quot; created
+customresourcedefinition.apiextensions.k8s.io &quot;gameserversets.stable.agones.dev&quot; created
+service &quot;agones-controller-service&quot; created
+deployment.apps &quot;agones-controller&quot; created
+deployment.apps &quot;agones-ping&quot; created
+service &quot;agones-ping-http-service&quot; created
+service &quot;agones-ping-udp-service&quot; created
+priorityclass.scheduling.k8s.io &quot;agones-system&quot; created
+validatingwebhookconfiguration.admissionregistration.k8s.io &quot;agones-validation-webhook&quot; created
+mutatingwebhookconfiguration.admissionregistration.k8s.io &quot;agones-mutation-webhook&quot; created
+secret &quot;agones-manual-cert&quot; created
+</code></pre>
+<h2>simple-udpサンプルの動作確認</h2>
+<p>Agonesをインストールしたら、<a href="https://agones.dev/site/docs/getting-started/create-gameserver/">Quickstart</a> を参考に動作確認をする。
+が、ドキュメントでは先述の「Agonesというサービスを手元で動作確認したい」というケースを前提としているため、自分のように手元の <code>install/yaml/install.yaml</code> でAgonesをインストールした場合は <code>kubectl create -f</code> に作業ツリーの <code>gameserver.yml</code> を指定するように注意する。</p>
+<p>誤って異なるソースのinstall.ymlとgameserver.ymlを用いた場合、Agones内の設定ファイルのフォーマットやプロトコルに差異が出て、不可解なエラーになることがある。</p>
+<pre><code class="language-bash">$ eval $(minikube docker-env)
+$ kubectl create -f examples/simple-udp/gameserver.yaml
+gameserver.stable.agones.dev &quot;simple-udp-fkhqj&quot; created
+</code></pre>
+<p>simple-udpサンプルの動作確認では最終的に <code>nc</code> コマンドでUDPパケットを送って、ACKが返ってくることを確認する。<br>
+公式ドキュメントでは <code>kubectl get gs</code> で接続アドレスとポートが表示されるはずなのだが、自分の環境では表示されなかった。</p>
+<pre><code class="language-bash">$ kubectl get gs
+NAME               AGE
+simple-udp-fkhqj   1h
+</code></pre>
+<p>接続アドレスとポートを調べるのに、<code>kubectl get</code> でピンポイントで探そうとして、結構な時間ハマってしまった。<br>
+愚直に <code>kubectl describe all</code> の中を探せば見つかる。</p>
+<pre><code class="language-bash">$ kubectl describe all
+Name:           simple-udp-fkhqj
+Namespace:      default
+Node:           minikube/10.0.2.15
+Start Time:     Sat, 30 Mar 2019 23:04:20 +0900
+Labels:         stable.agones.dev/gameserver=simple-udp-fkhqj
+                stable.agones.dev/role=gameserver
+Annotations:    cluster-autoscaler.kubernetes.io/safe-to-evict=false
+                stable.agones.dev/container=simple-udp
+                stable.agones.dev/sdk-version=0.9.0-rc
+Status:         Running
+IP:             172.17.0.7
+Controlled By:  GameServer/simple-udp-fkhqj
+Containers:
+  simple-udp:
+    Container ID:   docker://a20277e8c04cb92e5b3885824f9d6b98b36488312e92ed5bf664cb4bd3653917
+    Image:          gcr.io/agones-images/udp-server:0.7
+    Image ID:       docker-pullable://gcr.io/agones-images/udp-server@sha256:324f398fcee52edd0dee847496b350f3717e69536a1d70ae6a22b6fd8aab8bf0
+    Port:           7654/UDP
+    Host Port:      7383/UDP     &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; ここ
+    ...
+  agones-gameserver-sidecar:
+    ...
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  ...
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  39m   default-scheduler  Successfully assigned default/simple-udp-fkhqj to minikube
+  Normal  Pulling    39m   kubelet, minikube  pulling image &quot;gcr.io/agones-images/udp-server:0.7&quot;
+  Normal  Pulled     39m   kubelet, minikube  Successfully pulled image &quot;gcr.io/agones-images/udp-server:0.7&quot;
+  Normal  Created    39m   kubelet, minikube  Created container
+  Normal  Started    39m   kubelet, minikube  Started container
+  Normal  Pulled     39m   kubelet, minikube  Container image &quot;gcr.io/agones-images/agones-sdk:0.9.0-rc&quot; already present on machine
+  Normal  Created    39m   kubelet, minikube  Created container
+  Normal  Started    39m   kubelet, minikube  Started container
+
+
+Name:              kubernetes
+Namespace:         default
+Labels:            component=apiserver
+                   provider=kubernetes
+Annotations:       &lt;none&gt;
+Selector:          &lt;none&gt;
+Type:              ClusterIP
+IP:                10.96.0.1
+Port:              https  443/TCP
+TargetPort:        8443/TCP
+Endpoints:         192.168.99.102:8443         &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt; ここ
+Session Affinity:  None
+Events:            &lt;none&gt;
+</code></pre>
+<p>上で「ここ」と示した <code>Endpoints</code> のIP部と <code>Host Port</code> のポートを使用する。</p>
+<pre><code class="language-bash">$ nc -u 192.168.99.102 7383
+hello
+ACK: hello
+test
+ACK: test
+GAMESERVER
+NAME: simple-udp-fkhqj
+EXIT
+</code></pre>
+<p>ゲームサーバ側のログを見ながらだと、挙動がわかりやすい。</p>
+<pre><code class="language-bash">$ kubectl logs simple-udp-fkhqj -c simple-udp -f
+2019/03/30 14:04:25 Starting UDP server, listening on port 7654
+2019/03/30 14:04:25 Creating SDK instance
+2019/03/30 14:04:25 Starting Health Ping
+2019/03/30 14:04:25 Marking this server as ready
+2019/03/30 14:40:06 Received packet from 192.168.99.1:49977: hello
+2019/03/30 14:40:49 Received packet from 192.168.99.1:49977: test
+2019/03/30 14:41:32 Received packet from 192.168.99.1:49977: GAMESERVER
+2019/03/30 14:41:32 GameServer: {&quot;object_meta&quot;:{&quot;name&quot;:&quot;simple-udp-fkhqj&quot;,&quot;namespace&quot;:&quot;default&quot;,&quot;uid&quot;:&quot;b70af2f8-52f4-11e9-adb9-080027031e5a&quot;,&quot;resource_version&quot;:&quot;4697&quot;,&quot;generation&quot;:1,&quot;creation_timestamp&quot;:1553954660,&quot;annotations&quot;:{&quot;stable.agones.dev/sdk-version&quot;:&quot;0.9.0-rc&quot;},&quot;labels&quot;:{&quot;stable.agones.dev/sdk-timestamp&quot;:&quot;1553956874&quot;}},&quot;spec&quot;:{&quot;health&quot;:{&quot;PeriodSeconds&quot;:5,&quot;FailureThreshold&quot;:3,&quot;InitialDelaySeconds&quot;:5}},&quot;status&quot;:{&quot;state&quot;:&quot;Ready&quot;,&quot;address&quot;:&quot;10.0.2.15&quot;,&quot;ports&quot;:[{&quot;name&quot;:&quot;default&quot;,&quot;port&quot;:7383}]}}
+2019/03/30 15:31:17 Received packet from 192.168.99.1:49977: EXIT
+2019/03/30 15:31:17 Received EXIT command. Exiting.
+</code></pre>
+<h2>まとめ</h2>
+<ul>
+<li>Agonesの動作確認は、自分が何をしたいかによって適切なインストール方法を選ぶ必要がある
+<ul>
+<li>Agonesが何者かを手っ取り早くしりたいのであれば、ドキュメントどおりでOK</li>
+<li>SDK周りのサンプルまで確認したい場合は、リリースブランチを使う</li>
+</ul>
+</li>
+<li>自分のようなk8s弱者は、ゲームサーバ動作確認用の接続先アドレスとポートを <code>kubectl describe all</code> から探す
+<ul>
+<li>もっといい方法があるとは思うが、自分にはまだ圧倒的にk8s力が足りない。</li>
+</ul>
+</li>
+</ul>
+
+    </article>
+  </div>
+  <footer>
+  <small>
+    <a href="http://localhost:8080">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="http://localhost:8080/about">About</a>
+    | <a href="http://localhost:8080/resume-ja">Resume(ja)</a>
+    | &copy; 2022 thara
+  </small>
+</footer>
+</body>
+</html>
+
