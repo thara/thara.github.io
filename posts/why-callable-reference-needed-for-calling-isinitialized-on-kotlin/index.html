@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="thara">
+  <title>Kotlinの.isInitialized呼び出しになぜCallableReferenceの指定が必要なのか | thara.dev</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="">thara.dev</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>Kotlinの.isInitialized呼び出しになぜCallableReferenceの指定が必要なのか</h1>
+      <span>2018-12-07</span>
+    </div>
+    <article>
+    <p>Misocaの <a href="https://twitter.com/zetta1985">thara</a> です。<br>
+この記事は <a href="https://qiita.com/advent-calendar/2018/misoca-yayoi">Misoca+弥生+ALTOA Advent Calendar 2018 - Qiita</a> 7日目の記事です。</p>
+<p>最近は主にモバイルアプリ(<a href="https://play.google.com/store/apps/details?id=jp.misoca.misoca&amp;hl=ja">Android版</a>、<a href="https://itunes.apple.com/jp/app/id1026534800">iOS版</a>)のバックエンドを担当してますが、Java歴が長いのとSwift関連の本を書いたこともあってクライアントサイドのコードもちょこちょこ書いてます。</p>
+<p>今回はKotlinで書かれたソースコードをレビューしていて疑問に思ったことを掘り下げて調べてみたので、そのことについて書きます。<br>
+（本文は丁寧語を考えるのが面倒なので、文語体風で書きます）</p>
+<hr>
+<h2>.isInitializedについての疑問</h2>
+<p>Kotlinには<code>lateinit</code> という修飾子がある。
+この修飾子は、非nullのプロパティや変数に対してコンストラクタ外で初期化することを許可する。
+初期化する前にそのプロパティや変数にアクセスすると、<code>UninitializedPropertyAccessException</code> という例外がスローされる。
+よって、<code>lateinit</code> がつけられたプロパティや変数に安全にアクセスするためには、<code>.isInitialized</code>  が真であることを確認してからアクセスしなければならない。</p>
+<p>初期化しない場合</p>
+<!-- raw HTML omitted -->
+<p>これは以下のような例外が発生する。</p>
+<pre><code class="language-bash">Exception in thread &quot;main&quot; kotlin.UninitializedPropertyAccessException: lateinit property s has not been initialized
+    at A.print(Simplest version.kt:8)
+</code></pre>
+<p><code>.isInitialized</code> で初期化済みであることを確認</p>
+<!-- raw HTML omitted -->
+<p>さて、上記のコードでは <code>.isInitialized</code> を呼び出す際に<code>::</code>という<code>prefix</code>をつけている。これは、<a href="https://kotlinlang.org/docs/reference/reflection.html#callable-references">Callable Reference</a>を省略したもので、たとえば <code>lateinit</code> がクラスのインスタンスフィールドにつけられていた場合には<code>this::</code>という記述になる。<br>
+これを <code>s.isInitialized</code> に変えるとコンパイルが通らない。<code>String</code> には <code>isInitialized</code>というプロパティがないからだ。</p>
+<!-- raw HTML omitted -->
+<p>また、<code>lateinit</code> という修飾子がつけていなくても、当然のようにコンパイルが通らない。</p>
+<!-- raw HTML omitted -->
+<p>では、この<code>.isInitialized</code>はどこからやってくるのだろうか？<br>
+なぜ<code>::</code>や<code>this::</code>といった、Callable Referenceの指定が必要なのだろうか？</p>
+<h2>Kotlinの内部を追う</h2>
+<p>Android Studio上で <code>.isInitialized</code> の定義元に飛ぶと、<a href="https://github.com/JetBrains/kotlin/blob/e21c235bbb839d273fd6b419d0b3527e573f5e4e/libraries/stdlib/src/kotlin/util/Lateinit.kt">kotlin/Lateinit.kt</a> であった。</p>
+<pre><code class="language-kotlin">/**
+ * Returns `true` if this lateinit property has been assigned a value, and `false` otherwise.
+ *
+ * Cannot be used in an inline function, to avoid binary compatibility issues.
+ */
+@SinceKotlin(&quot;1.2&quot;)
+@InlineOnly
+inline val @receiver:AccessibleLateinitPropertyLiteral KProperty0&lt;*&gt;.isInitialized: Boolean
+</code></pre>
+<p>どうやら通常のプロパティアクセスとは異なり、コンパイラからは特別なプロパティリテラルとして認識されるらしい。</p>
+<p><code>lateinit</code>が導入された<a href="https://github.com/JetBrains/kotlin/commit/c6263ac8e6cab87d18f92d77c401faf4b6cad431">コミットログ</a>を参考にコードを追うと <code>.isInitialized</code> の実態は <a href="https://github.com/JetBrains/kotlin/blob/2c4e023cba45b8dea65cd99d86373445eec35336/compiler/backend/src/org/jetbrains/kotlin/codegen/intrinsics/LateinitIntrinsics.kt">kotlin/LateinitIntrinsics.kt</a> で自動生成されたもののようだ。<br>
+また、<a href="https://github.com/JetBrains/kotlin/blob/0e5544a4919a185f52b5e4294820d6ed45a45d6d/compiler/frontend/src/org/jetbrains/kotlin/resolve/calls/checkers/LateinitIntrinsicApplicabilityChecker.kt">kotlin/LateinitIntrinsicApplicabilityChecker.kt</a> では、コンパイル時の構文チェックを行っている。そこで以下のような記述を見つけた。</p>
+<pre><code class="language-kotlin">if (!referencedProperty.isLateInit) {
+    context.trace.report(LATEINIT_INTRINSIC_CALL_ON_NON_LATEINIT.on(reportOn))
+}
+</code></pre>
+<p><code>context.trace.report(LATEINIT_INTRINSIC_CALL_ON_NON_LATEINIT.on(reportOn))</code> は、おそらくコンパイルエラーのメッセージを指定しているのだろう。<a href="https://github.com/JetBrains/kotlin/blob/2182be82e64cb57c43d711d3696e21b2133ab285/compiler/frontend/src/org/jetbrains/kotlin/diagnostics/rendering/DefaultErrorMessages.java">kotlin/DefaultErrorMessages.java</a>には、<br>
+この <code>LATEINIT_INTRINSIC_CALL_ON_NON_LATEINIT</code> という名前で、さきほどの <code>lateinit</code> がつけられていない変数にアクセスした際に表示されたエラーメッセージが指定されていた。</p>
+<p><a href="https://github.com/JetBrains/kotlin/blob/0e5544a4919a185f52b5e4294820d6ed45a45d6d/compiler/frontend/src/org/jetbrains/kotlin/resolve/calls/checkers/LateinitIntrinsicApplicabilityChecker.kt">kotlin/LateinitIntrinsicApplicabilityChecker.kt</a> をさらに読み進めると、以下の判定式を見つけられた。</p>
+<pre><code class="language-swift">} else if (!isBackingFieldAccessible(referencedProperty, context)) {
+    context.trace.report(LATEINIT_INTRINSIC_CALL_ON_NON_ACCESSIBLE_PROPERTY.on(reportOn, referencedProperty))
+</code></pre>
+<p><code>isBackingFieldAccessible</code> という名前から、backing fieldにアクセスできない場合は <code>.isInitialized</code> を使うことができないらしい。</p>
+<p>Kotlinの通常のプロパティアクセスの構文ではgetterやsetterが呼び出されるが、特定のコンテキストではgetterやsetterを介さず直接フィールドにアクセスできる。<br>
+そのとき、そのフィールドをbacking fieldと呼ぶ。</p>
+<p>backing fieldにアクセスできるのは、そのプロパティが宣言されたソースファイル内に限られる。
+これは、そのソースファイル以外のクラスの<code>lateinit</code> が修飾されたプロパティや変数に対して、<code>.isInitialized</code>を呼ぶことができないことでもある。</p>
+<p>これで、先程挙げた2つの疑問が解消した。</p>
+<h2>疑問の答え</h2>
+<p>まず、「<code>.isInitialized</code>はどこからやってくるのだろうか？」という疑問。</p>
+<p>これは、<code>lateinit</code>を修飾したプロパティや変数は<code>.isInitialized</code> という特殊なプロパティリテラルを使えるようにコンパイラが特別扱いしていたのだった。具体的な実装はインライン化されており自動生成される。<a href="Misoca%E3%81%A7PR%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E3%81%97%E3%81%9F%E3%81%A8%E3%81%8D%E3%81%AB%E3%81%AF%E3%80%81%E8%A6%8B%E5%BD%93%E9%81%95%E3%81%84%E3%81%AE%E6%8C%87%E6%91%98%E3%82%92%E3%81%97%E3%81%A6%E3%81%84%E3%81%9F%E6%B0%97%E3%81%8C%E3%81%99%E3%82%8B%E3%80%82%E3%81%94%E3%82%81%E3%82%93%E3%81%AA%E3%81%95%E3%81%84%E2%80%A6">^1</a></p>
+<p>そして、次の「なぜ<code>::</code>や<code>this::</code>といった、Callable Referenceの指定が必要なのだろうか？」という疑問。</p>
+<p>これは<code>.isInitialized</code>を使用可能なのがbacking fieldに限られるからだ。<code>lateinit</code>をつけたプロパティのオブジェクトに対する通常のプロパティアクセス（getter/setterの呼び出し）と区別するためにCallable Referenceが構文上必要だった。</p>
+<p>さて、ここで新たな疑問が起こる。<br>
+Kotlinでは、当然のようにCallable Referenceを指定して通常のプロパティアクセスも可能だ。<code>foo</code>というプロパティが存在すれば、<code>this::foo</code> と呼び出せる。<br>
+では、元々 <code>lateinit</code>をつけたプロパティの型に、<code>.isInitialized</code>というメソッドが定義されていた場合はどうなるのだろうか？</p>
+<h3>.isInitializedメソッドが存在するときの挙動</h3>
+<p>挙動を確認するために以下のコードを書いた。</p>
+<!-- raw HTML omitted -->
+<p>これを実行すると、 <code>Initialized</code> が表示される。つまり、<a href="https://github.com/JetBrains/kotlin/blob/e21c235bbb839d273fd6b419d0b3527e573f5e4e/libraries/stdlib/src/kotlin/util/Lateinit.kt">kotlin/Lateinit.kt</a> で定義されている <code>.isInitialized</code>が実行される。</p>
+<p>次は、以下のような変更を加えてみる。Callable Referenceの指定を取ったものだ。</p>
+<!-- raw HTML omitted -->
+<p>これを実行すると、今度は <code>Not initialized</code> が表示される。これは、<code>X</code>クラスの<code>isInitialized</code> プロパティが呼び出されたことを表している。</p>
+<p>これらのことから、 <strong>Callable Referenceを指定してisInitializedプロパティを使うとkotlin/Lateinit.ktのisInitializedが優先される</strong> ことがわかった。<br>
+これは2つ目の「なぜ<code>::</code>や<code>this::</code>といった、Callable Referenceの指定が必要なのだろうか？」という疑問の答えを補完しているようにも思える。<br>
+Callable Referenceを指定すると<code>isInitialized</code>の解決に<a href="https://github.com/JetBrains/kotlin/blob/e21c235bbb839d273fd6b419d0b3527e573f5e4e/libraries/stdlib/src/kotlin/util/Lateinit.kt">kotlin/Lateinit.kt</a> の<code>.isInitialized</code>が優先的に扱われるため、コンパイラから見て曖昧さが無くなるのではないだろうか。</p>
+<h2>まとめ</h2>
+<ul>
+<li><code>lateinit</code>を修飾したプロパティや変数が使用できる<code>.isInitialized</code> はコンパイラから特別扱いされた特別なプロパティリテラルである</li>
+<li><code>.isInitialized</code>はbacking fieldに対してのみ使用可能であるため、Callable Referenceを用いる必要がある。</li>
+<li>Callable Referenceの使用により<a href="https://github.com/JetBrains/kotlin/blob/e21c235bbb839d273fd6b419d0b3527e573f5e4e/libraries/stdlib/src/kotlin/util/Lateinit.kt">kotlin/Lateinit.kt</a> の<code>.isInitialized</code>を使用することをコンパイラに伝える。</li>
+</ul>
+<h2>感想</h2>
+<p><code>isInitialized</code> を最初レビューで見かけたときには、奇妙な構文だと思った。<br>
+通常のプロパティアクセスのような構文を部分的に特殊扱いしている点が洗練されていない印象を持ったが、既存の構文への影響を考えると、実用的なKotlinらしい判断でもあると言えそうだ。</p>
+<p>ちなみに、今回の記事を書くにあたって<a href="https://github.com/JetBrains/kotlin">KotlinのGitHubリポジトリ</a>のコードを読んでいたのだが、途中で<a href="https://github.com/Kotlin/KEEP">Kotlin/KEEP: Kotlin Evolution and Enhancement Process</a>なるリポジトリを見つけた。<br>
+このリポジトリはKotlinの言語仕様に対するproposalを管理しているのだが、今回の<code>isInitialized</code>の件もちゃんとproposalが出ていた。</p>
+<p><a href="https://github.com/Kotlin/KEEP/blob/master/proposals/lateinit-property-isinitialized-intrinsic.md">KEEP/lateinit-property-isinitialized-intrinsic.md at master · Kotlin/KEEP · GitHub</a></p>
+<p>これを最初に読んでおけば、Kotlin本体を見なくても疑問解決したなぁ・・・</p>
+<p>自分が「洗練されていない印象を持った」という感想を持ったと先に書いたが、 現に</p>
+<blockquote>
+<p>The solution is admittedly very ad-hoc.</p>
+</blockquote>
+<p>と言及されていた。ですよねー。</p>
+<p>まぁ、Kotlin本体のソースコードリーディング楽しかったし、なんかコントリビュートしたい気持ちになったので、良しとしよう。</p>
+<p>Swiftもそうだが、最近の言語はKEEPのような言語仕様のproposalもGitHub上でオープンに議論される風潮にあり、良い傾向だと思う。</p>
+<hr>
+<p>明日は <a href="https://qiita.com/merotan">めろたん</a>さん が「なんかがんばります」だそうです。<br>
+これは期待できますよ・・・！</p>
+<hr>
+
+    </article>
+  </div>
+  <footer>
+  <small>
+    <a href="">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="/about">About</a>
+    | <a href="/resume-ja">Resume(ja)</a>
+    | &copy; 2022 thara
+  </small>
+</footer>
+</body>
+</html>
+

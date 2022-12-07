@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="thara">
+  <title>aws-cliでEC2インスタンスを作成するときのメモ | thara.dev</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="">thara.dev</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>aws-cliでEC2インスタンスを作成するときのメモ</h1>
+      <span>2017-06-01</span>
+    </div>
+    <article>
+    <p>毎回ググってる気がするのでメモ。</p>
+<h2>準備</h2>
+<h4>使用するツール</h4>
+<p><a href="https://github.com/aws/aws-cli">aws-cli</a></p>
+<h4>インストール</h4>
+<pre><code>$ pip install awscli
+</code></pre>
+<h4>プロファイル設定</h4>
+<pre><code>$ aws configure --profile ${プロファイル名｝
+</code></pre>
+<p>アクセスキーID、シークレットアクセスキー、デフォルトリージョン、出力フォーマットを指定。
+出力フォーマットはだいたい <code>json</code> にしてる。 <code>jq</code> コマンドで使うので。</p>
+<h2>EC2インスタンス作成</h2>
+<h3>キーペア作成</h3>
+<p>（必要であれば）</p>
+<pre><code>$ aws --profile=${プロファイル名｝ ec2 create-key-pair \
+    --key-name ${新規キー名} \
+    --query 'KeyMaterial' \
+    --output text \
+    &gt; $HOME/.ssh/${保存する秘密鍵のファイル名} \
+    &amp;&amp; chmod 400 $HOME/.ssh/${保存する秘密鍵のファイル名}
+</code></pre>
+<h3>インスタンス作成</h3>
+<p><em>設定するSecurityGroupとSubnetを事前に調べておく</em></p>
+<pre><code>$ aws --profile=${プロファイル名｝ ec2 describe-security-groups | jq -c &quot;.SecurityGroups[] | [.GroupName,.GroupId]&quot;
+$ aws --profile=${プロファイル名｝ ec2 describe-subnets | jq -c &quot;.Subnets[] | [.Tags[0].Value,.SubnetId]&quot;
+</code></pre>
+<pre><code>aws --profile=${プロファイル名｝ ec2 run-instances \
+	--image-id ami-923d12f5 \
+	--instance-type t2.micro \
+	--key-name ${新規キー名} \
+	--security-group-ids ${SecurityGroupのGroupID} \
+	--subnet-id ${SubnetのSubnetID} \
+	--monitoring Enabled=true
+</code></pre>
+<p>インスタンスIDを控えておく。</p>
+<h3>インスタンスに名前を付ける</h3>
+<pre><code>$ aws --profile=${プロファイル名} ec2 create-tags --resources ${インスタンスID} --tags Key=Name,Value=&quot;${インスタンス名}&quot;
+</code></pre>
+
+    </article>
+  </div>
+  <footer>
+  <small>
+    <a href="">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="/about">About</a>
+    | <a href="/resume-ja">Resume(ja)</a>
+    | &copy; 2022 thara
+  </small>
+</footer>
+</body>
+</html>
+

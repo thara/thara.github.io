@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="thara">
+  <title>ElixirでWalker's alias method実装した | thara.dev</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="">thara.dev</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>ElixirでWalker's alias method実装した</h1>
+      <span>2021-10-12</span>
+    </div>
+    <article>
+    <p><a href="https://hex.pm/packages/alias_method">Hexで公開した</a>。<br>
+初Hexパッケージ公開。</p>
+<p>Walkes's alias methodは <a href="https://github.com/thara/rust_aliasmethod">Rust</a> とか <a href="https://github.com/thara/go-aliasmethod">Go</a> とかですでに書いていて、<br>
+わりと書き慣れているアルゴリズムのはずだったけど関数型プログラミング言語で書くと割と手間取った。</p>
+<p>富豪的に書いた方が抽象度上がって全体の見通しが良かった。</p>
+<p>あと久しぶりにElixir触った感想。</p>
+<ul>
+<li>map/filter/reduce最高</li>
+<li>再帰関数の終了条件をpattern matchで書けるのはわかりやすい</li>
+<li>Rubyのモジュールシステムを踏襲しているっぽいけど、ちょっとわかりづらい（自分が慣れてないだけ）</li>
+<li>ExUnitでparameterized testする標準的な方法はないっぽい</li>
+<li>typespec書くのめんどい
+<ul>
+<li>書かねば、というモチベーションはあるが、dialyzerで警告出すだけではなくて修正内容を提案してほしい</li>
+</ul>
+</li>
+<li>hex package公開時にドキュメンテーション必須なのは良い</li>
+</ul>
+
+    </article>
+  </div>
+  <footer>
+  <small>
+    <a href="">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="/about">About</a>
+    | <a href="/resume-ja">Resume(ja)</a>
+    | &copy; 2022 thara
+  </small>
+</footer>
+</body>
+</html>
+
