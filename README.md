@@ -6,21 +6,21 @@ My personal web site, hosting at https://thara.dev
 
 ## Requirements
 
-- deno 1.x later
+- go 1.x later
 - make
 
 ## Usage
 
-### Build locally
+### Serve the generated site locally
 
-`make build`
+`make serve`
 
-### Build via GitHub Action
+### Deploy via GitHub Action
 
-The GitHub Action ([build.yml](./.github/workflows/build.yml)) is available to
+The GitHub Action ([publish.yml](./.github/workflows/publish.yml)) is available to
 build and deploy automatially.
 
-- `main` branch (Source)
+- `master` branch (Source)
 - `gh-pages` branch (GitHub Pages)
 
 ## Note
@@ -35,8 +35,8 @@ build and deploy automatially.
 
 ### Templating
 
-- posts/*.md -> templates/post.ejs
-- XXXX.md -> tempaltes/XXX.ejs or default template(tempaltes/layout.ejs)
+- pages/posts/*.md -> templates/post.html
+- pages/*.md -> templates/base.html
 
 ## Author
 
