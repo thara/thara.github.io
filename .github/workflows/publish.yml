@@ -19,9 +19,9 @@ jobs:
           go-version: '1.19.3'
       - run: go version
 
-      - name: Build
+      - name: Generate site
         run: |
-          make build
+          make run
 
       - name: Deploy
         if: github.event_name == 'push'
