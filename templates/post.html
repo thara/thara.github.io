@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  {{ template "head" . }}
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="{{.Site.BaseURL}}">{{.Site.SiteTitle}}</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>{{.PageTitle}}</h1>
+      <span>{{.DatePageCreated}}</span>
+    </div>
+    <article>
+    {{ .Content }}
+    </article>
+  </div>
+  {{ template "footer" . }}
+</body>
+</html>
+
