@@ -11,7 +11,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/yuin/goldmark"
+    "github.com/yuin/goldmark"
+    "github.com/yuin/goldmark/renderer/html"
 	"gopkg.in/yaml.v2"
 )
 
@@ -40,6 +41,13 @@ type Page struct {
 
 	timestamp int64
 }
+
+var markdown = goldmark.New(
+    goldmark.WithRendererOptions(
+        html.WithXHTML(),
+        html.WithUnsafe(),
+    ),
+)
 
 func loadPage(filename, parent, distDir string, page *Page) error {
 	p := path.Join(parent, filename)
@@ -76,7 +84,7 @@ func loadPage(filename, parent, distDir string, page *Page) error {
 		}
 
 		var buf bytes.Buffer
-		if err := goldmark.Convert([]byte(body), &buf); err != nil {
+		if err := markdown.Convert([]byte(body), &buf); err != nil {
 			return fmt.Errorf("fail to parse markdown of %s: %v ", filename, err)
 		}
 
