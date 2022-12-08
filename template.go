@@ -33,7 +33,7 @@ func init() {
 	templates["index"] = t
 }
 
-var siteCfg SiteConfig = func() SiteConfig {
+func newSiteConfig() SiteConfig {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		log.Fatalf("url parse error: %v", err)
@@ -41,15 +41,15 @@ var siteCfg SiteConfig = func() SiteConfig {
 	return SiteConfig{
 		SiteTitle: "thara.dev",
 		Author:    "thara",
-		BaseURL:   u,
+		BaseURL:   u.String(),
 		Year:      time.Now().Year(),
 	}
-}()
+}
 
 type SiteConfig struct {
 	SiteTitle string
 	Author    string
-	BaseURL   *url.URL
+	BaseURL   string
 	Year      int
 }
 

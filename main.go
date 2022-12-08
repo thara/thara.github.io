@@ -15,12 +15,14 @@ import (
 
 const distDirRoot string = "public"
 
-var serve bool
 var baseURL string
+var serve bool
+var port int
 
 func init() {
-	flag.BoolVar(&serve, "serve", false, "serves the site locally.")
-	flag.StringVar(&baseURL, "base", "http://localhost:8080", "base URL")
+	flag.StringVar(&baseURL, "base", "", "base URL")
+	flag.BoolVar(&serve, "serve", false, "serves the site locally")
+	flag.IntVar(&port, "port", 8080, "listen port")
 }
 
 func main() {
@@ -45,8 +47,9 @@ func main() {
 		r := http.NewServeMux()
 		r.Handle("/", handlers.LoggingHandler(os.Stdout, http.StripPrefix("/", http.FileServer(&restrictedFileSystem{http.Dir("public")}))))
 
-		fmt.Println("Listen at: localhost:8080")
-		log.Fatal(http.ListenAndServe(":8080", handlers.CompressHandler(r)))
+		b := fmt.Sprintf(":%d", port)
+		fmt.Printf("Listen at %s\n", b)
+		log.Fatal(http.ListenAndServe(b, handlers.CompressHandler(r)))
 	}
 }
 
