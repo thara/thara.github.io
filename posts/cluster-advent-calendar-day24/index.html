@@ -20,15 +20,15 @@
       <span>2021-12-24</span>
     </div>
     <article>
-    <p>この記事は <a href="https://qiita.com/advent-calendar/2021/cluster">クラスター Advent Calendar 2021</a> の24日目の記事です。<br>
+    <p>この記事は <a href="https://qiita.com/advent-calendar/2021/cluster">クラスター Advent Calendar 2021</a> の24日目の記事です。<br />
 昨日は <a href="https://github.com/anoriqq">anoriqq</a> の<a href="https://zenn.dev/anoriqq/articles/507472a92debb2">ジュニアなエンジニアを助けたクラスター社のメンタリング</a> でした。</p>
-<hr>
+<hr />
 <p>ごきげんよう。<a href="https://corp.cluster.mu/">クラスター株式会社</a> のプラットフォーム事業部 engineチームの <a href="https://github.com/thara">thara</a> です。</p>
-<p><a href="https://www.wantedly.com/companies/cluster/post_articles/294991">名古屋からではなく愛知県瀬戸市からリモートワークで働いています。</a><br>
+<p><a href="https://www.wantedly.com/companies/cluster/post_articles/294991">名古屋からではなく愛知県瀬戸市からリモートワークで働いています。</a><br />
 今まで週1オフィス出社だったのが、来年から月1出社になるようです。やったね。</p>
 <p>この記事では、 2019年のadvent calendarで kyokomi が書いた<a href="https://kyokomi.hatenablog.com/entry/2019/12/17/000000">clusterのserverについて（入門編）</a> の 後編 として、もう少し技術的に踏み込んだ2021年現在の構成とその課題について書きます。</p>
 <h2>全体構成</h2>
-<p><img src="../../images/cluster-2021-overview.jpg" alt="Overview"></p>
+<p><img src="../../images/cluster-2021-overview.jpg" alt="Overview" /></p>
 <p>おおよその構成は2019年と変わっていませんが、改めて述べると</p>
 <ul>
 <li>APIサーバー
@@ -73,10 +73,10 @@
 </ul>
 </li>
 </ul>
-<p>では、上記のサーバーサイドの主要なサービスについて見ていきましょう。<br>
+<p>では、上記のサーバーサイドの主要なサービスについて見ていきましょう。<br />
 ちなみに、それぞれに課題を書いてますがあくまでも自分個人の見解なのでご了承下さい。</p>
 <h2>APIサーバー</h2>
-<p><img src="../../images/cluster-2021-apiserver.jpg" alt="API server"></p>
+<p><img src="../../images/cluster-2021-apiserver.jpg" alt="API server" /></p>
 <p>HTTPSエンドポイントを持つ、clusterの中心となるサービスです。
 ユーザーの作成、認証/認可、ワールド/イベント管理、UGC管理、決済など、その役割は多岐に渡ります。
 クライアントアプリから直接リクエストを受け取るだけでなく、後述のUGCパイプラインや全体構成の図には描かれていない他のコンポーネントからも使用される内部APIを提供しています。</p>
@@ -112,7 +112,7 @@
 <p>5年前から保守し続けていたコードベースがだいぶ膨らんでいます。そもそもclusterはVRイベントサービスとして作られ、VRソーシャルルームアプリ、バーチャルイベントプラットフォーム、バーチャルSNSを経て、現在はメタバースプラットフォームへと、ピボットほどではないにしろフォーカスする領域が変わっています。既存データを維持しつつ、ここまでサービスが変遷してきたことによって、現在では不適切な抽象化になっている箇所があることは事実です。</p>
 <p>今後は、適切な抽象化によるプラットフォームとしての安定性・信頼性・変更可能性を確保しつつ、toB案件などのグロース領域において柔軟かつ迅速に発展していけるような切り分けをしていけると良いのではないかと思います。チーム構成もソフトウェア開発チーム1つだったのがengineチームとgrowthチームに分かれたことも相まって、その動きが加速していけると良いなぁと考えています。</p>
 <h2>room server</h2>
-<p><img src="../../images/cluster-2021-fermion.jpg" alt="Fermion"></p>
+<p><img src="../../images/cluster-2021-fermion.jpg" alt="Fermion" /></p>
 <p>Unityクライアントと直接接続しリアルタイム通信を担う、ルーム内の3D体験を支える要となるサービスです。
 APIサーバーのようなリクエスト-レスポンスモデルではなく、clientがmessageをroom serverに送信し、serverは必要に応じてルーム内の状態をclientにpushすることで接続しているクライアント間の状態を同期します。</p>
 <p>各クライアント間でやりとりするmessageには、以下のようなものがあります。</p>
@@ -136,7 +136,7 @@ APIサーバーのようなリクエスト-レスポンスモデルではなく�
 <p>実はroom serverに移行したのは今年に入ってからで、以前はずっとサードパーティのpure なMQTTサーバーを使っていました。サードパーティなので内部の実装に手を入れておらず（Go製ではなかった）messageをbroadcastするために全く別のプログラムをクライアントアプリと同じようにMQTTサーバーに接続し、broadcast用のmessageをpublishする、ということをしていました。それ以外にも、pureなMQTTサーバーを前提として設計された機能などが少なくないです。その制約がなくなった今room serverだからこそ成せる機能をどんどん実装していきたいのですが、pure MQTTサーバーを前提とした設計をベースとしたプロトコルの後方互換性を保ちつつ日々のリリースを通じてマイグレーションをしていかねばなりません。</p>
 <p>幸い、マイグレーション自体は必要に応じてですが特に大きな問題もなく進んでおり、マイグレーションに対する勘所もわかってきたので、機能追加が進んでいる状態ではあります。</p>
 <h2>アダプター</h2>
-<p><img src="../../images/cluster-2021-fermo.jpg" alt="Fermo"></p>
+<p><img src="../../images/cluster-2021-fermo.jpg" alt="Fermo" /></p>
 <p>room serverからRDBで管理されているデータにアクセスするための中間レイヤーであるgRPCサーバーです。</p>
 <p>マイクロサービスパターンでいう<a href="https://docs.microsoft.com/ja-jp/azure/architecture/patterns/anti-corruption-layer">破損防止レイヤー</a>なのですが「破損しているわけじゃないしな・・・」と思って、とりあえずアダプターと言ってみました。</p>
 <p>特筆すべきことがあるサービスではないのですが、APIサーバーから管理されるRDB上のデータと、room serverで扱うデータ形式の変換を担う、意外と重要なサービスです。</p>
@@ -144,7 +144,7 @@ APIサーバーのようなリクエスト-レスポンスモデルではなく�
 <h3>課題</h3>
 <p>ALBのgRPCサポートのおかげで負荷分散はだいぶ楽なのですが、取りうるgRPC固有metricsがHTTP/HTTPSのそれと比べて圧倒的に少ないです。今はgRPC request countぐらいしかありません。せめてHTTPCode_ELB_4XX_Countみたいに、gRPCステータスコードごとのmetricsが欲しいところ...</p>
 <h2>UGCパイプライン</h2>
-<p><img src="../../images/cluster-2021-ugcpipeline.jpg" alt="UGC pipeline"></p>
+<p><img src="../../images/cluster-2021-ugcpipeline.jpg" alt="UGC pipeline" /></p>
 <p>ユーザーがアップロードしたUGCをダウンロード可能にする、サーバーレスアーキテクチャ上に構成された一連の機能群です。</p>
 <p>大まかに以下のようなプロセスをたどります。</p>
 <ol>

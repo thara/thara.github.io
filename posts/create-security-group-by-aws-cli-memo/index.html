@@ -26,7 +26,7 @@
     --description ${説明} --vpc-id ${VPCのID} | jq -r &quot;.GroupId&quot;`
 
 </code></pre>
-<p>全開になっている22ポートを塞ぐ・・・が、そんなルールがないと怒られた。<br>
+<p>全開になっている22ポートを塞ぐ・・・が、そんなルールがないと怒られた。<br />
 昔はデフォで22空いてたような気がしたけど、気のせい・・・？</p>
 <pre><code class="language-sh">$ aws --profile=${プロファイル名｝ ec2 revoke-security-group-ingress \
     --group-id $GROUP_ID --protocol tcp --port 22 --cidr &quot;0.0.0.0/0&quot;

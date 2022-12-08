@@ -31,7 +31,7 @@
 <li>utils</li>
 </ul>
 <h3>commands</h3>
-<p>まずは、command。このcommandはGoFのCommandパターンのことではなく、Command-Query Responsibility SegregationのCommand。<br>
+<p>まずは、command。このcommandはGoFのCommandパターンのことではなく、Command-Query Responsibility SegregationのCommand。<br />
 つまり、更新系のオペレーションのこと。
 このモジュールには、更新用の関数とその関数用の引数/戻り値（入力/出力）用ののDTOが含まれ、viewsから直接使用される。
 このモジュールの更新用関数は、DBのトランザクション境界とおおよそ一致する。</p>
@@ -64,8 +64,8 @@ def update_user_profile(command: UserProfileUpdateCommand):
 
     return UserProfileUpdateResult(success=True, errors=[])    
 </code></pre>
-<p><code>_validate_command</code> は、上の例のようにシンプルな更新であれば<code>UserProfile</code>のメソッドとして提供してもよいかもしれない。<br>
-が、modelを更新する機能が複数ある場合は検証処理もそれによって異なることがあるので、そのような検証処理はcommandに定義した方がいいだろう。<br>
+<p><code>_validate_command</code> は、上の例のようにシンプルな更新であれば<code>UserProfile</code>のメソッドとして提供してもよいかもしれない。<br />
+が、modelを更新する機能が複数ある場合は検証処理もそれによって異なることがあるので、そのような検証処理はcommandに定義した方がいいだろう。<br />
 また、commandでmodelの<code>save</code>メソッドを直接呼ぶのも良いが、複数の機能から同じような更新処理を実行するのであれば、modelにメソッドを実装するのも悪くない。</p>
 <p>これらの関数/クラス はViewから以下のように使われる。（RESTｆrameworkを使用を前提としている）</p>
 <pre><code class="language-python">

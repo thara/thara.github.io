@@ -25,7 +25,7 @@
 <p><a href="https://corp.cluster.mu/">クラスター株式会社</a> サーバー班の t-hara です。</p>
 <p><a href="https://www.wantedly.com/companies/cluster/post_articles/294991">名古屋ではなく愛知県瀬戸市からリモートワークで働いています</a>。</p>
 <p>クラスター Advent Calendarは（意外なことに）社の話が多いですが、あまり気にせずに書きたいことを書きます。</p>
-<hr>
+<hr />
 <h2>Release Engineeringとは</h2>
 <p>自分がRelease Engineeringという用語を初めて知ったのは<a href="https://sre.google/sre-book/release-engineering/">SRE本の8章</a> だった。非常に興味深かかったのだが、SRE本で唯一Site Reliability Engineerとは異なるRelease Engineerという他のロールに関する記載であったのと、Release EngineeringとGoogleにおけるRelease Engineerの責務が混在しており、さらに事例がGAFAレベルの問題への解決であったため、雲を掴むようであったことを覚えている。</p>
 <p>この記事では、Release Engineeringをより身近に感じてもらうために、現在のソフトウェア開発組織が直面するであろう問題を挙げそれに自分なりの解決案を提示したい。</p>
@@ -153,10 +153,11 @@
 「SQLクエリビルダーを用いずに」という前提を置いたのは、大抵のSQLクエリビルダーで <code>SELECT *</code> 相当のDSLを使用しても実際に生成されるSQLで<code>SELECT *</code>は用いられず列を羅列している実装になっていることが多い（と自分は思っている。明確なエビデンスはない）からだ。これもSQLクエリビルダーの実装に依存するので、使用しているSQLクエリビルダーがどうなのか把握しておきたい。</p>
 <p>SQLクエリビルダーの比較において <code>SELECT *</code> はあまり表に出てこないが、マイグレーションの難易度はそのままRelease Engineeringの難易度にも大きく影響するので、採用する際はよく吟味したい。</p>
 <p>ちなみに、上記は <code>SELECT</code> を中心に展開したが、<code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>も同様に考慮が必要だ。が、正直以下のゲーム実況が面白すぎて全く集中して書けませんでした。多分考慮漏れで溢れているとおもいます、すみません。</p>
-<!-- raw HTML omitted -->
+<blockquote class="twitter-tweet" data-partner="tweetdeck"><p lang="ja" dir="ltr"><a href="https://twitter.com/hashtag/ClusterGAMEJAM?src=hash&amp;ref_src=twsrc%5Etfw">#ClusterGAMEJAM</a> 2020 in WINTER 実況プレイイベントを開催🎉<br>インサイドちゃん姉妹が皆さんによるゲームジャム投稿作品を実況します！<br><br>📅12/22（火）21:00 START！<br><br>▼YouTube<a href="https://t.co/dSAQeChAf7">https://t.co/dSAQeChAf7</a><br><br>▼cluster<a href="https://t.co/xmEPEar0cM">https://t.co/xmEPEar0cM</a></p>&mdash; cluster公式∞GAMEJAM 26日結果発表！ (@cluster_jp) <a href="https://twitter.com/cluster_jp/status/1339420055444963332?ref_src=twsrc%5Etfw">December 17, 2020</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 <h2>ステートフルなアプリケーションの更新</h2>
 <p>昨今はFunction as a Serviceが当たり前となり、もはやサーバーサイドアプリケーションを構築する際にはステートレスが前提となっているように思える。</p>
-<p>が、もちろん要件によってはステートフルなアプリケーションを構築せざるを得ないケースがある。<br>
+<p>が、もちろん要件によってはステートフルなアプリケーションを構築せざるを得ないケースがある。<br />
 はい、まさに今がそうです。</p>
 <p>ステートフル、と一口に言ってもどこにどのような状態を持つかは要件によって様々で、知識を共有しづらい。ここでは、2つの限定したケースでどのようにバージョンを更新していけばよいかに触れたい。</p>
 <p>まずは、オンメモリに状態を持つ場合。アプリケーション自体のプロセス上にオンメモリで状態を持つと、当然のようにデプロイで更新するとプロセス再起動時に状態が失われる。どうしてもデプロイ前後で状態を保ちたい場合、一時的にファイルや異なるプロセス・外部のデータストアに退避したり、そもそも先述の保存先に定期的にバックアップを取る、などの方法がある。いずれも、いつオンメモリの状態が破棄されたとしても復元可能な状態にしておくことが肝要だ。</p>
@@ -164,18 +165,18 @@
 <h2>終わりに</h2>
 <p>Release Engineeringは実際の開発組織で多かれ少なかれ実施されているが、その重要度が叫ばれながらもSite Reliability Engineeringほど知識が共有されていないことに課題を感じている。</p>
 <p>相当の乱文ではあり、個人の経験に依拠するものが多くエビデンスに欠けている（というか出せない）が、この記事を通じてRelease Engineeringへの取り組みへの興味を持っていただけたら幸いである。</p>
-<hr>
+<hr />
 <p>明日は <a href="https://twitter.com/halmiran">@halmiran</a> の「Hello, Cluster !!」です。</p>
 <p>おそらくこの記事よりは、圧倒的に読みやすいでしょう。お楽しみに。</p>
-<hr>
+<hr />
 <p>せっかくの会社のAdvent Calendarなので開発組織のことがわかる参考情報もついでに載せておきます。</p>
 <p>↓の動画はエージェント向けとされていますが、我々がどのような開発組織なのかとか、どのようなソフトウェアエンジニアを求めているのかとかがよくわかると思います。
 (ちょうどいいところからはじまるようにしてます)</p>
 <p><strong>clusterを支える技術（と組織）</strong></p>
-<!-- raw HTML omitted -->
+<iframe width="560" height="315" src="https://www.youtube.com/embed/yus-9Gn1NDs?start=2240" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 <p>ついでに求人情報も。Wantedlyが嫌な方は<a href="https://twitter.com/zetta1985">DMしてください</a>。</p>
-<!-- raw HTML omitted -->
-<!-- raw HTML omitted -->
+<iframe frameborder='0' height='305px' name='wantedly_project_widget_542484' scrolling='no' src='https://platform.wantedly.com/projects/542484' style='border: none; max-width: 100%; min-width: 240px; width: 540px;'></iframe>
+<iframe frameborder='0' height='305px' name='wantedly_project_widget_542488' scrolling='no' src='https://platform.wantedly.com/projects/542488' style='border: none; max-width: 100%; min-width: 240px; width: 540px;'></iframe>
 
     </article>
   </div>

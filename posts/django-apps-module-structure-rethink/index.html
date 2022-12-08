@@ -20,7 +20,7 @@
       <span>2017-01-26</span>
     </div>
     <article>
-    <p>[以前のDjangoモジュール構成のpost]({% post_url 2016-12-09-module-configuration-of-django-app %}) では、論理凝集度が高過すぎる感があって、もっと機能凝集度を高めたモジュール構成を考えてみた。<br>
+    <p>[以前のDjangoモジュール構成のpost]({% post_url 2016-12-09-module-configuration-of-django-app %}) では、論理凝集度が高過すぎる感があって、もっと機能凝集度を高めたモジュール構成を考えてみた。<br />
 もちろんDjangoアプリケーションは細かく分けることを前提。</p>
 <p>以下、全体像を簡単に図示。</p>
 <p>![Django App Structure]({{ site.url }}/images/django-app-structure.png)</p>
@@ -86,8 +86,8 @@
     ├── urls.py
     └── views.py (View)
 </code></pre>
-<p>モジュール名は <code>{Domain}_{Infrastructure type}</code> という法則にすることで、どのDomainのどのようなInfrastructureを使用するモジュールかが分かりやすくなる。<br>
-また、他のDjangoアプリケーションからアクセスできるのは、ModelsとDomainに限定する。<br>
+<p>モジュール名は <code>{Domain}_{Infrastructure type}</code> という法則にすることで、どのDomainのどのようなInfrastructureを使用するモジュールかが分かりやすくなる。<br />
+また、他のDjangoアプリケーションからアクセスできるのは、ModelsとDomainに限定する。<br />
 Domainでは、他のDomainを参照することにより循環参照になることがある。その場合は、関数やメソッド内でimportするか、別モジュールに切り出すなどして回避する。</p>
 <p>やっぱり、Simple is best.</p>
 

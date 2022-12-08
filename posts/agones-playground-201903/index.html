@@ -26,14 +26,14 @@
 <h2>Agonesのインストール方法</h2>
 <p>Agonesのインストール方法には、 Google Kubernetes Engine (GKE)を使うか、Minikubeを使うか、Amazon Web Services EKSを使うかの大きく3通りがあるが、自分は動作確認がしたいだけなので、Minikubeを選択する。
 その他2つは、まだ試してない。</p>
-<p>MinikubeではVMドライバを選択できるが、公式の<a href="https://agones.dev/site/docs/installation/#setting-up-a-minikube-cluster">Installation</a>どおり、VirtualBoxを使ったほうが変にハマらなくて済むと思う。<br>
+<p>MinikubeではVMドライバを選択できるが、公式の<a href="https://agones.dev/site/docs/installation/#setting-up-a-minikube-cluster">Installation</a>どおり、VirtualBoxを使ったほうが変にハマらなくて済むと思う。<br />
 このとき、VirtualBoxは最新のバージョンに更新しておいた方がよい。
 自分はVirtualBoxのバージョンが古くて、後述のセットアップコマンドが正常に動作しなかったので、VirtualBoxのバージョンを更新して <code>6.0.4 r128413</code> にした。</p>
 <p>そして、もう一つ決めておいた方がよいのが、<code>kubectl apply -f</code> に渡すinstall.yamlをどれにするか。
 これは、Agonesの動作確認をどのような用途で行いたいかによる。</p>
 <p>単に、Agonesというサービスを手元で動作確認したいだけであれば、公式ドキュメントのとおり、GitHubリポジトリ上においてある <code>install/yaml/install.yaml</code> を使えばよい。</p>
 <p>自分のようにsimple-udpなどのサンプルだけではなく、SDK周りのサンプルを触ってみたい場合は、Agonesリポジトリをgit cloneした上で、その作業ツリー上の <code>install/yaml/install.yaml</code> を使う。</p>
-<p>このとき、masterではなく、リリースブランチを使用した方がよい。<br>
+<p>このとき、masterではなく、リリースブランチを使用した方がよい。<br />
 masterのinstall.yml内のテンプレートに用いるimageが、Agonesが使用するDockerレジストリ(<code>gcr.io/agones-images</code>)上にまだデプロイされていないことがあるからだ。
 <a href="https://github.com/GoogleCloudPlatform/agones/blob/master/build/README.md">開発者向けREADME</a>通りにやれば自分でイメージをビルドしてAgonesを立ち上げることもできるが、
 かなりの遠回りになるので、Agones自体の開発にコントリビュートしたいのでなければ避けておいた方が無難だ。</p>
@@ -96,13 +96,13 @@ secret &quot;agones-manual-cert&quot; created
 $ kubectl create -f examples/simple-udp/gameserver.yaml
 gameserver.stable.agones.dev &quot;simple-udp-fkhqj&quot; created
 </code></pre>
-<p>simple-udpサンプルの動作確認では最終的に <code>nc</code> コマンドでUDPパケットを送って、ACKが返ってくることを確認する。<br>
+<p>simple-udpサンプルの動作確認では最終的に <code>nc</code> コマンドでUDPパケットを送って、ACKが返ってくることを確認する。<br />
 公式ドキュメントでは <code>kubectl get gs</code> で接続アドレスとポートが表示されるはずなのだが、自分の環境では表示されなかった。</p>
 <pre><code class="language-bash">$ kubectl get gs
 NAME               AGE
 simple-udp-fkhqj   1h
 </code></pre>
-<p>接続アドレスとポートを調べるのに、<code>kubectl get</code> でピンポイントで探そうとして、結構な時間ハマってしまった。<br>
+<p>接続アドレスとポートを調べるのに、<code>kubectl get</code> でピンポイントで探そうとして、結構な時間ハマってしまった。<br />
 愚直に <code>kubectl describe all</code> の中を探せば見つかる。</p>
 <pre><code class="language-bash">$ kubectl describe all
 Name:           simple-udp-fkhqj

@@ -130,7 +130,7 @@ hosts:
 <h2>再現</h2>
 <pre><code>$ wrk -t10 -c200 -d10s http://127.0.0.1:18080
 </code></pre>
-<p>以下のようなエラーログが出力される。<br>
+<p>以下のようなエラーログが出力される。<br />
 （場合によっては、スレッド数や接続数等のオプションを変更する必要があるかもしれない）</p>
 <pre><code>[2017-02-18 01:26:57 +0900] [56927] [INFO] Autorestarting worker after current request.
  - - [18/Feb/2017:01:26:57 +0900] &quot;GET / HTTP/1.1&quot; 200 11 &quot;-&quot; &quot;-&quot;
@@ -152,7 +152,7 @@ FileNotFoundError: [Errno 2] No such file or directory: '/tmp/gunicorn.sock'
 </code></pre>
 <p>この状態になると、Unixドメインソケットのファイルが紛失するため、gunicornに対してリバースプロキシ（この例だとH2O）から接続できなくなり、
 HTTPリクエストしたクライアントには502が返される。</p>
-<p>該当issueは <a href="https://github.com/benoitc/gunicorn/issues/1298">これ</a>。<br>
+<p>該当issueは <a href="https://github.com/benoitc/gunicorn/issues/1298">これ</a>。<br />
 該当箇所は19.6.0での修正箇所であるため、19.6.0より前のバージョンではこの現象は発生しないと思われる。
 また、このissueはすでに対応されcloseされているが、まだリリースには至っていない。</p>
 <h2>回避方法</h2>

@@ -50,7 +50,7 @@ let _health = thread::spawn(enclose! {(sdk) move || {
     }
 }});
 </code></pre>
-<p><code>thread::spawn</code> に渡しているクロージャ内では、sdk変数を特定の条件で再束縛しているため、sdk変数はmutableである必要がある。<br>
+<p><code>thread::spawn</code> に渡しているクロージャ内では、sdk変数を特定の条件で再束縛しているため、sdk変数はmutableである必要がある。<br />
 マクロなしでmutableなsdk変数を作ろうとcloneしてしまうと、シャドウイングによって外側のスコープのimmutableなsdk変数を後続の処理で使うことができなくなってしまう。</p>
 <p>上記の <code>enclose</code> マクロは、このシャドウイングを防止する。健全なマクロバンザイ。</p>
 <p>なお、自分はマクロ素人 &amp; ちょっと前のバージョンでこのマクロを使ったので、Rust2018ではもっといい方法があるかもしれない。

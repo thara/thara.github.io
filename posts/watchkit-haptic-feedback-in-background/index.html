@@ -87,7 +87,7 @@ class InterfaceController: WKInterfaceController, HKWorkoutSessionDelegate {
 <li>WatchKit Extention projectの Info.plist 内の <code>Required background modes (Watch)</code> Key の Value に <code>Workout Processing</code> を設定する</li>
 </ul>
 <p>（一番最後の Info.plist の更新を忘れて、上記サンプルコードの Timer が動作しなくてハマった）</p>
-<hr>
+<hr />
 <p>やりたいことは実現はできたのだけれど、単に Background 中に Haptic feedback したいだけなのに、ワークアウトセッションにしなければいけないのが難点。</p>
 <p>上記のサンプルコードのような簡単な実装であれば、1日中ワークアウトセッション起動しっぱなしでもバッテリの減りが通常時と比べて極端に多くなる、ということはないのだが、大して運動もしてないのにアクティビティアプリに運動中だと認識されてしまう。</p>
 <p>実際に App Store に審査依頼を出してはいないのだけれど、おそらくリジェクトされるだろう。運動してないのにアクティビティアプリのアチーブメントを達成してしまうのは自分としても不本意だし、誰もが嫌がると思う。</p>
