@@ -86,7 +86,7 @@ h6 {
 /*   margin: 15px 0; } */
 
 hr {
-  background: transparent url("https://raw.githubusercontent.com/gollum/gollum/master/lib/gollum/public/gollum/images/dirty-shade.png") repeat-x 0 0;
+  background: #000f172e repeat-x 0 0;
   border: 0 none;
   color: #cccccc;
   height: 4px;
