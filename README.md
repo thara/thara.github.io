@@ -7,13 +7,13 @@ My personal web site, hosting at https://thara.dev
 ## Requirements
 
 - go 1.x later
-- make
+- [just](https://github.com/casey/just)
 
 ## Usage
 
 ### Serve the generated site locally
 
-`make serve`
+`just serve`
 
 ### Deploy via GitHub Action
 
