@@ -291,3 +291,24 @@ table.highlight tr {
   border-top: 1px solid #ffffff;
 }
 
+table{
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+table tr{
+  border-bottom: solid 1px #eee;
+  cursor: pointer;
+}
+
+table th,table td{
+  text-align: center;
+  padding: 15px 0;
+}
+
+table td.icon{
+  background-size: 35px;
+  background-position: left 5px center;
+  background-repeat: no-repeat;
+  padding-left: 30px;
+}
