@@ -11,6 +11,7 @@ import (
 	"text/template"
 	"time"
 
+    "github.com/yuin/goldmark/extension"
     "github.com/yuin/goldmark"
     "github.com/yuin/goldmark/renderer/html"
 	"gopkg.in/yaml.v2"
@@ -43,6 +44,7 @@ type Page struct {
 }
 
 var markdown = goldmark.New(
+	goldmark.WithExtensions(extension.GFM),
     goldmark.WithRendererOptions(
         html.WithXHTML(),
         html.WithUnsafe(),
