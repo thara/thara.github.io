@@ -7,7 +7,7 @@ tags: [python, django]
 
 ## 2018-01-14追記
 この記事の意見は、2018-01-14 現在の見解とは異なります。   
-最新の見解は [こちら]({{ site.baseurl }}{% post_url 2018-01-14-rethink-django-project-structure %}) を参照してください。
+最新の見解は [こちら](../rethink-django-project-structure) を参照してください。
 
 ---
 

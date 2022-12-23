@@ -8,7 +8,7 @@ tags: [agones, kubernetes]
 久しぶりにAgonesを調べてみたら、[Webサイト](https://agones.dev/site/) ができていた。
 
 Agones本体も、ゲームサーバーの情報が得られるようになっていたり、Node.jsのSDKをサポートしたりと色々変わっていたので、Agonesの最新をローカルで動かそうと思ったが、予想以上にハマってしまったので、
-[以前のAgones紹介記事]({{ site.baseurl }}{% post_url 2018-06-26-agones-introduction %}) と少しかぶってしまうが、2019-03現段階でのサンプルを動かすまでをメモっておく。
+[以前のAgones紹介記事](../agones-introduction) と少しかぶってしまうが、2019-03現段階でのサンプルを動かすまでをメモっておく。
 
 ## Agonesのインストール方法
 
