@@ -83,7 +83,7 @@ inline val @receiver:AccessibleLateinitPropertyLiteral KProperty0&lt;*&gt;.isIni
 <p>これで、先程挙げた2つの疑問が解消した。</p>
 <h2>疑問の答え</h2>
 <p>まず、「<code>.isInitialized</code>はどこからやってくるのだろうか？」という疑問。</p>
-<p>これは、<code>lateinit</code>を修飾したプロパティや変数は<code>.isInitialized</code> という特殊なプロパティリテラルを使えるようにコンパイラが特別扱いしていたのだった。具体的な実装はインライン化されており自動生成される。<a href="Misoca%E3%81%A7PR%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E3%81%97%E3%81%9F%E3%81%A8%E3%81%8D%E3%81%AB%E3%81%AF%E3%80%81%E8%A6%8B%E5%BD%93%E9%81%95%E3%81%84%E3%81%AE%E6%8C%87%E6%91%98%E3%82%92%E3%81%97%E3%81%A6%E3%81%84%E3%81%9F%E6%B0%97%E3%81%8C%E3%81%99%E3%82%8B%E3%80%82%E3%81%94%E3%82%81%E3%82%93%E3%81%AA%E3%81%95%E3%81%84%E2%80%A6">^1</a></p>
+<p>これは、<code>lateinit</code>を修飾したプロパティや変数は<code>.isInitialized</code> という特殊なプロパティリテラルを使えるようにコンパイラが特別扱いしていたのだった。具体的な実装はインライン化されており自動生成される。<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
 <p>そして、次の「なぜ<code>::</code>や<code>this::</code>といった、Callable Referenceの指定が必要なのだろうか？」という疑問。</p>
 <p>これは<code>.isInitialized</code>を使用可能なのがbacking fieldに限られるからだ。<code>lateinit</code>をつけたプロパティのオブジェクトに対する通常のプロパティアクセス（getter/setterの呼び出し）と区別するためにCallable Referenceが構文上必要だった。</p>
 <p>さて、ここで新たな疑問が起こる。<br />
@@ -122,7 +122,14 @@ Callable Referenceを指定すると<code>isInitialized</code>の解決に<a hre
 <hr />
 <p>明日は <a href="https://qiita.com/merotan">めろたん</a>さん が「なんかがんばります」だそうです。<br />
 これは期待できますよ・・・！</p>
+<div class="footnotes" role="doc-endnotes">
 <hr />
+<ol>
+<li id="fn:1">
+<p>MisocaでPRレビューしたときには、見当違いの指摘をしていた気がする。ごめんなさい…&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
 
     </article>
   </div>

@@ -42,7 +42,7 @@
 <p>ファミコンではAPU（Audio Processing Unit）と呼ばれるマイクロプロセッサで、プログラムから動的に設定された値を元に矩形波や三角波などを生成し、音を生成しています。</p>
 <p>そもそもオーディオプログラミングの知識が皆無だった自分は，<a href="http://wiki.nesdev.com/w/index.php/APU">nesdev.comのAPU関連のwiki</a> を読み漁り、
 理解をコードに落とし込むかのように分周器やタイマー、エンベロープ・ジェネレータなどを細かく実装していきました。</p>
-<p>そもそも用語の意味さえ分からなかった自分は、ここでだいぶ時間を食いました。<a href="Coursera%E3%81%A7%E6%A9%9F%E6%A2%B0%E5%AD%A6%E7%BF%92%E7%B3%BB%E3%81%AE%E3%82%B3%E3%83%BC%E3%82%B9%E3%82%92%E5%8F%97%E8%AC%9B%E3%81%97%E3%81%A6%E3%81%9F%E3%81%AE%E3%81%8C%E4%B8%80%E7%95%AA%E3%81%AE%E8%A6%81%E5%9B%A0%E3%81%AE%E6%B0%97%E3%82%82%E3%81%99%E3%82%8B...">^1</a></p>
+<p>そもそも用語の意味さえ分からなかった自分は、ここでだいぶ時間を食いました。<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup></p>
 <p>さらに、実際に音を再生するためには何らかのクロスプラットフォーム対応されたライブラリを使う必要があります。
 Webブラウザ上で動作しているものは<a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API">Web Audio API</a>を使用しており、自分はクロスプラットフォームのネイティブで動作するエミュレータを実装しているので参考になりません。</p>
 <p>C言語やC++製のファミコンエミュレータのコードを見てみるとSDL2のAudioを使っているものが多かったのですが <a href="http://atsushieno.hatenablog.com/entry/2017/12/07/041145">libsoundio-sharpとPInvokeGeneratorについて - ものがたり</a> を参考に、ソースコードが読みやすく、エラー関連のドキュメントがしっかり書かれた<a href="https://github.com/andrewrk/libsoundio">libsoundio</a>にチャレンジしてみました。</p>
@@ -197,7 +197,7 @@ public class SoundIO {
     }
 }
 </code></pre>
-<p>これで、ライブラリを扱うユーザーが誤った値を<code>getOutputDevice(at:)</code>に渡す可能性が減ります。 <a href="Swift%E3%81%AE%E5%9E%8B%E3%82%A8%E3%82%A4%E3%83%AA%E3%82%A2%E3%82%B9%E3%81%AF%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E6%99%82%E3%81%AB%E3%81%AF%E5%89%8A%E9%99%A4%E3%81%95%E3%82%8C%E3%82%8B%E3%81%AE%E3%81%A7%E3%80%81%E3%81%82%E3%81%8F%E3%81%BE%E3%81%A7%E3%82%82%E3%83%89%E3%82%AD%E3%83%A5%E3%83%A1%E3%83%B3%E3%83%86%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%A8%E3%83%A9%E3%82%A4%E3%83%96%E3%83%A9%E3%83%AA%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC%E3%81%B8%E3%81%AE%E8%AA%AC%E6%98%8E%E3%81%AE%E3%81%9F%E3%82%81%E3%81%AE%E3%82%82%E3%81%AE%E3%81%A7%E3%81%99">^2</a></p>
+<p>これで、ライブラリを扱うユーザーが誤った値を<code>getOutputDevice(at:)</code>に渡す可能性が減ります。 <sup id="fnref:2"><a href="#fn:2" class="footnote-ref" role="doc-noteref">2</a></sup></p>
 <h3>生のポインタを扱う余地を残す</h3>
 <p><code>CSoundIO.SoundIo</code>構造体を扱う関数を全て<code>SoundIO</code>クラスのメソッドとして定義したいところですが、このバインディングライブラリの保守の手間や元のライブラリの変更への追従を考えると、ライブラリユーザーにはある程度の柔軟性を持たせた方が良いことがあります。</p>
 <p>例えば、ライブラリユーザーは最新バージョンのライブラリで追加された関数を使いたいが、バインディングライブラリがその関数をサポートしておらず、かつ内部のポインタへのアクセスを完全にライブラリ内に閉じている場合、ライブラリユーザーはそのバインディングライブラリの使用を諦めるかforkするしか手がなくなってしまいます。</p>
@@ -249,7 +249,17 @@ public class SoundIO {
 <p><a href="https://qiita.com/advent-calendar/2019/misoca-yayoi">Misoca+弥生 Advent Calendar 2019 - Qiita</a>、<br />
 次回24日は <a href="https://qiita.com/yayoi_ueshima">yayoi_ueshima</a>さんの「仮想通貨のやり取りを体感してみよう！」です。<br />
 お楽しみに！</p>
+<div class="footnotes" role="doc-endnotes">
 <hr />
+<ol>
+<li id="fn:1">
+<p>Courseraで機械学習系のコースを受講してたのが一番の要因の気もする...&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+<li id="fn:2">
+<p>Swiftの型エイリアスはコンパイル時には削除されるので、あくまでもドキュメンテーションとライブラリユーザーへの説明のためのものです&#160;<a href="#fnref:2" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
 
     </article>
   </div>
