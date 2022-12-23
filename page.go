@@ -44,7 +44,10 @@ type Page struct {
 }
 
 var markdown = goldmark.New(
-	goldmark.WithExtensions(extension.GFM),
+	goldmark.WithExtensions(
+		extension.GFM,
+		extension.Footnote,
+	),
     goldmark.WithRendererOptions(
         html.WithXHTML(),
         html.WithUnsafe(),

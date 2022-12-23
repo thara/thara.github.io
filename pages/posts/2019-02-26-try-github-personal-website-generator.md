@@ -65,7 +65,5 @@ GitHub上でつくったPersonal websiteをhiring有効にしている人とかM
 
 GitHub社がどこまで考えてこのPersonal websiteを公開したのかはまだわからない。今後の動向に期待したい。
 
----
-
 [^1]: CSSとかWeb DesignとかSassとかはデフォルト値で、自分自身が興味あるわけじゃない。
 [^2]: リポジトリの一覧をpinned repositoriesにすればよいのでは、と考えたけど、そもそも[github-metadata gem](https://github.com/jekyll/github-metadata)がpinned repositoriesに対応していないっぽくて詰んでる
