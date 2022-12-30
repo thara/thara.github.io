@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="thara">
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="stylesheet" href="https://thara.dev/css/main.css">
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Solid所感 | thara.dev" />
+  <title>Solid所感 | thara.dev</title>
+</head>
+<body>
+  <header>
+    <h1>
+      <a href="https://thara.dev">thara.dev</a>
+    </h1>
+  </header>
+  <div role="main">
+    <div>
+      <h1>Solid所感</h1>
+      <span>2022-12-30</span>
+    </div>
+    <article>
+    <p>ちょっと遅れたけど、<a href="https://www.axion.zone/web3-9/">「Web3はWebじゃない」とWebの父が断言</a> を読んで。</p>
+<p>いわゆるWeb3がブロックチェーンを前提にするのに対し、Web3.0はセマンティック・ウェブを前提としていて、その思想や目的は全く異なる。
+Tim Berners-Leeが嘆くのもしょうがない。</p>
+<p>ところで、Timが創業した <a href="https://www.inrupt.com/">Inrupt</a> 、そしてその事業の中心である <a href="https://solidproject.org/">Solid</a> については初めて知ったので、今の見解を記録に残しておきたい。</p>
+<p>記事中では「Inruptが開発するSolid」と説明されていたがこれは不正確。
+Solidという分散データストアとそれへのアクセス制御を規定する仕様があり、その個人ごとのデータ保存単位であるPodを管理するサーバーを<a href="https://www.inrupt.com/products/enterprise-solid-server">エンタープライズレベルで提供する</a>のがInrupt。</p>
+<p>Solidを広めるためにTimが事業を立ち上げた、と自分は捉えた。</p>
+<h2>Solidとは何か</h2>
+<p>Solidとは前述のように、分散データストアとそれへのアクセス制御を規定する仕様であり、分散されたデータストア間では各ユーザーやアプリケーションは <a href="https://www.w3.org/2005/Incubator/webid/spec/identity/">WebID</a> によって識別される。</p>
+<p><a href="https://github.com/solid/">GitHub orgがあり</a>、以下のようなdescriptionが書かれている。</p>
+<blockquote>
+<p>Re-decentralizing the web.</p>
+</blockquote>
+<p>もともとWebは非中央集権であったものが、今は特定のサービスプロバイダによる中央集権となってしまったものを、再度非中央集権に戻す、ということか。</p>
+<p>Solid自体はHTTPS上で構築できるプロトコルで、2022-12現在はW3Cにworking groupが存在し仕様はオープンになっているがまだEditor's draft。</p>
+<p><a href="https://solidproject.org/TR/protocol">Solid Protocol</a></p>
+<p>軽く中身を見ると、懐かしきリソース指向で、RDF(Resource Description Framework)をベースにしているっぽい。
+GET/POST/PUT/PATCH/DELETE などのHTTPメソッドが正しく使われる世界。個人的には好み。</p>
+<p>だが、令和のこの時代にRDFが普及しきるのか、という疑問がある。
+更新のための「N3 Patch」という、<a href="https://w3c.github.io/N3/spec/">Notation 3</a> を用いたPATCHリクエストをサポートしなければならないが、
+RDFとかN3とかを扱ったライブラリが現時点で各言語に備わっているかというとだいぶ怪しい。</p>
+<p>RDF自体が仕様が膨大で、一開発者としては、SolidのためだけにRDFライブラリを開発するモチベーションはなかなか湧かないし、Solid以外にRDFを必要とするユースケースが自分の身の回りではあまりない。</p>
+<p><a href="https://www.ndl.go.jp/jp/dlib/standards/lod/index.html">国立国会図書館でLinked Open Data扱ってる</a> から、オープンデータを扱う人とかにはそのモチベーションがあるかもしれないけれど。</p>
+<h2>Solidの今後</h2>
+<p>仕様がRDFをベースにしていて、普及の大きな障壁になる、という課題がありそう。</p>
+<p>一方で、GDPR/CCPAをはじめとする個人データ保護の強化の流れは変わらず、これにSolidが刺さる可能性がある。
+サービスプロバイダとしてもGDPR/CCPA対応には苦心するポイントではあるので、それがSolidによってサービスプロバイダ側の負担が減るのであれば、エンドユーザーとサービスプロバイダ双方にとってメリットがある。</p>
+<p>しかし、Solidでは個人ごとにPodを管理するSolidサーバーを持つことで個人データ保護をできると謳っているように見えるが、少なくともここ数年で個人ごとにSolidサーバーを管理するようにはならないように思える。
+非中央集権を目的としているのにも関わらず、GoogleやAppleなどが管理するSolidサーバーをエンドユーザーが使用することになる。結果、中央集権であることに変わりはないのではないか。</p>
+<p>これまでの流れを見ると、中央集権・非中央集権どちらかで定着するのではなく、螺旋のように時間軸でどちらかに揺れ動く、それ自体に意味や価値があるのかもしれない。</p>
+<h2>自分のスタンス</h2>
+<p>非中央集権やリソース指向であるSolid protocolなどは自分の好みではあるが、如何せんRDFなどの技術に自分のプライベートの時間をベットする余裕はないので、一旦は静観。
+仕事でも利用する可能性があるのはだいぶ先に思えるし。</p>
+<p>ただ、GDPR/CCPA周りの流れと合わせて動向は見守っておきたいところ。</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/qWVTjMsv7AE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </article>
+  </div>
+  <footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about">About</a>
+    | <a href="https://thara.dev/resume-ja">Resume(ja)</a>
+    | &copy; 2022 thara
+  </small>
+</footer>
+</body>
+</html>
+
