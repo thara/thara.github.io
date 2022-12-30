@@ -61,7 +61,7 @@ var errPageSkip error = errors.New("page skip")
 func loadPage(filename, parent, distDir string, page *Page) error {
 	p := path.Join(parent, filename)
 
-	src, err := files.Open(p)
+	src, err := os.Open(p)
 	if err != nil {
 		return fmt.Errorf("fail to open %s: %v ", p, err)
 	}

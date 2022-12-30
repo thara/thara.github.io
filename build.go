@@ -14,6 +14,8 @@ import (
 //go:embed pages/*
 var files embed.FS
 
+var srcDirRoot string = "pages"
+
 func buildPages(distDirRoot string) error {
 	if err := os.RemoveAll(distDirRoot); err != nil {
 		return fmt.Errorf("fail to remove dir %s: %v", distDirRoot, err)
@@ -23,8 +25,8 @@ func buildPages(distDirRoot string) error {
 	}
 
 	var pages []Page
-	err := walkDir("pages", func(filename, parent string) error {
-		distDir := path.Join(distDirRoot, strings.TrimPrefix(parent, "pages"))
+	err := walkFiles(srcDirRoot, func(filename, parent string) error {
+		distDir := path.Join(distDirRoot, strings.TrimPrefix(parent, srcDirRoot))
 		if err := os.MkdirAll(distDir, os.ModePerm); err != nil {
 			return fmt.Errorf("fail to mkdir %s: %v", distDir, err)
 		}
@@ -66,7 +68,7 @@ func buildPages(distDirRoot string) error {
 	})
 
 	var indexPage IndexPage
-	if err := loadPage("index.md", "pages", distDirRoot, &indexPage.Page); err != nil {
+	if err := loadPage("index.md", srcDirRoot, distDirRoot, &indexPage.Page); err != nil {
 		return fmt.Errorf("fail to load index page: %v ", err)
 	}
 	indexPage.Posts = posts
@@ -82,21 +84,41 @@ func buildPages(distDirRoot string) error {
 	return err
 }
 
-func walkDir(dir string, f func(filename, parent string) error) error {
-	es, err := files.ReadDir(dir)
+func walkFiles(dir string, f func(filename, parent string) error) error {
+	es, err := os.ReadDir(dir)
 	if err != nil {
 		return fmt.Errorf("fail to read dir %s: %v", dir, err)
 	}
 	for _, e := range es {
 		if e.IsDir() {
 			childDir := path.Join(dir, e.Name())
-			if err := walkDir(childDir, f); err != nil {
+			if err := walkFiles(childDir, f); err != nil {
 				return fmt.Errorf("fail to walk dir %s: %v", childDir, err)
 			}
 		} else {
 			if err := f(e.Name(), dir); err != nil {
 				return fmt.Errorf("fail to call walk func %s/%s: %v", dir, e.Name(), err)
 			}
+		}
+	}
+	return nil
+}
+
+func walkDir(dir string, f func(dirname, parent string) error) error {
+	es, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("fail to read dir %s: %v", dir, err)
+	}
+	for _, e := range es {
+		if !e.IsDir() {
+			continue
+		}
+		if err := f(e.Name(), dir); err != nil {
+			return fmt.Errorf("fail to call walk func %s/%s: %v", dir, e.Name(), err)
+		}
+		childDir := path.Join(dir, e.Name())
+		if err := walkDir(childDir, f); err != nil {
+			return fmt.Errorf("fail to walk dir %s: %v", childDir, err)
 		}
 	}
 	return nil
