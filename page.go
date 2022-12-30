@@ -2,18 +2,20 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
-    "github.com/yuin/goldmark/extension"
-    "github.com/yuin/goldmark"
-    "github.com/yuin/goldmark/renderer/html"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/renderer/html"
 	"gopkg.in/yaml.v2"
 )
 
@@ -48,11 +50,13 @@ var markdown = goldmark.New(
 		extension.GFM,
 		extension.Footnote,
 	),
-    goldmark.WithRendererOptions(
-        html.WithXHTML(),
-        html.WithUnsafe(),
-    ),
+	goldmark.WithRendererOptions(
+		html.WithXHTML(),
+		html.WithUnsafe(),
+	),
 )
+
+var errPageSkip error = errors.New("page skip")
 
 func loadPage(filename, parent, distDir string, page *Page) error {
 	p := path.Join(parent, filename)
@@ -82,6 +86,13 @@ func loadPage(filename, parent, distDir string, page *Page) error {
 		if err := yaml.Unmarshal(bs[1], &f); err != nil {
 			return fmt.Errorf("fail to parse frontmatter of %s: %v ", filename, err)
 		}
+		if v, ok := f["draft"]; ok {
+			b, err := strconv.ParseBool(fmt.Sprintf("%v", v))
+			if err == nil && b {
+				return errPageSkip
+			}
+		}
+
 		body := bs[2]
 
 		if v, ok := f["title"]; ok {

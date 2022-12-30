@@ -30,6 +30,9 @@ func buildPages(distDirRoot string) error {
 		}
 		var page Page
 		if err := loadPage(filename, parent, distDir, &page); err != nil {
+			if err == errPageSkip {
+				return nil
+			}
 			return fmt.Errorf("fail to load page %s/%s: %v ", parent, filename, err)
 		}
 		pages = append(pages, page)
