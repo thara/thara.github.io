@@ -1,0 +1,72 @@
+/* for gist embed */
+table.highlight tr {
+  border-top: 1px solid var(--dark);
+}
+
+table {
+  padding: 0;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+table tr {
+  border-top: 1px solid var(--dark);
+  margin: 0;
+  padding: 0;
+  border-bottom: solid 1px var(--dark);
+  cursor: pointer;
+}
+
+/* table tr:nth-child(2n) { */
+/*   background-color: #f8f8f8; */
+/* } */
+
+table tr th {
+  font-weight: bold;
+  border: 1px solid var(--dark);
+  text-align: left;
+  margin: 0;
+  padding: 6px 13px;
+}
+
+table tr td {
+  border: 1px solid var(--dark);
+  text-align: left;
+  margin: 0;
+  padding: 6px 13px;
+}
+
+table tr th :first-child, table tr td :first-child {
+  margin-top: 0;
+}
+
+table tr th :last-child, table tr td :last-child {
+  margin-bottom: 0;
+}
+
+table th,table td{
+  text-align: center;
+  padding: 15px 0;
+}
+
+table td.icon{
+  background-size: 35px;
+  background-position: left 5px center;
+  background-repeat: no-repeat;
+  padding-left: 30px;
+}
+
+blockquote {
+  border-left: 4px solid #dddddd;
+  padding: 0 15px;
+  color: #777777;
+}
+
+blockquote > :first-child {
+  margin-top: 0;
+}
+
+blockquote > :last-child {
+  margin-bottom: 0;
+}
+
