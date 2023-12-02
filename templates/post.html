@@ -5,15 +5,10 @@
 </head>
 <body>
   <header>
-    <h1>
-      <a href="{{.Site.BaseURL}}">{{.Site.SiteTitle}}</a>
-    </h1>
+    <h1>{{.PageTitle}}</h1>
+    <time>{{.DatePageCreated}}</time>
   </header>
   <div role="main">
-    <div>
-      <h1>{{.PageTitle}}</h1>
-      <span>{{.DatePageCreated}}</span>
-    </div>
     <article>
     {{ .Content }}
     </article>
@@ -21,4 +16,3 @@
   {{ template "footer" . }}
 </body>
 </html>
-
