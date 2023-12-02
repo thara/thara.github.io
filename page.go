@@ -134,7 +134,11 @@ func loadPage(filename, parent, distDir string, page *Page) error {
 	page.distPath = distPath
 
 	page.Site = newSiteConfig()
-	page.Title = fmt.Sprintf("%s | %s", pageTitle, page.Site.SiteTitle)
+	if pageTitle == page.Site.SiteTitle {
+		page.Title = pageTitle
+	} else {
+		page.Title = fmt.Sprintf("%s | %s", pageTitle, page.Site.SiteTitle)
+	}
 
 	page.Path = strings.TrimPrefix(distPath, distDirRoot)
 
