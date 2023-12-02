@@ -15,15 +15,10 @@
 </head>
 <body>
   <header>
-    <h1>
-      <a href="https://thara.dev">thara.dev</a>
-    </h1>
+    <h1>Rustのクロージャ内で外側のスコープのimmutableな変数をmutableな変数に同名で束縛したいときにつかうマクロ</h1>
+    <time>2019-04-30</time>
   </header>
   <div role="main">
-    <div>
-      <h1>Rustのクロージャ内で外側のスコープのimmutableな変数をmutableな変数に同名で束縛したいときにつかうマクロ</h1>
-      <span>2019-04-30</span>
-    </div>
     <article>
     <p>クロージャ内で外側のスコープの変数をmutableな変数に同名で束縛したいときに、外側の変数の不変に保つために、
 以下のようなマクロを使っている。</p>
@@ -74,4 +69,3 @@ let _health = thread::spawn(enclose! {(sdk) move || {
 </footer>
 </body>
 </html>
-

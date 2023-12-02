@@ -15,15 +15,10 @@
 </head>
 <body>
   <header>
-    <h1>
-      <a href="https://thara.dev">thara.dev</a>
-    </h1>
+    <h1>Gunicorn起動中にUnixドメインソケットが消える</h1>
+    <time>2017-07-06</time>
   </header>
   <div role="main">
-    <div>
-      <h1>Gunicorn起動中にUnixドメインソケットが消える</h1>
-      <span>2017-07-06</span>
-    </div>
     <article>
     <p>会社のデベロッパーブログでも書いたけど再現手順は記載してなかったので、改めて。</p>
 <p>Gunicorn 19.6.0 をthread workerで稼働していると、max_requestsに達してworker threadが再起動したときにUnixドメインソケットが削除される現象にあった。</p>
@@ -176,4 +171,3 @@ HTTPリクエストしたクライアントには502が返される。</p>
 </footer>
 </body>
 </html>
-
