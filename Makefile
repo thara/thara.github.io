@@ -1,6 +1,6 @@
 DST=public
 TMP_DIR=.tmp
-DATA_DIR=.pandoc
+DATA_DIR=$(shell pwd)
 
 ifdef CI
 	BASE_URL=https://thara.dev
