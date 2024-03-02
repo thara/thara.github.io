@@ -44,7 +44,8 @@ $(DST)/%.html: $(SRC)/%.md
 
 .PHONY: clean
 clean:
-	@rm $(HTML_FILES)
+	@rm -f $(HTML_FILES)
+	@rm -rf $(DST)/posts
 	@rm -rf $(TMP_DIR)
 
 .PHONY: serve
