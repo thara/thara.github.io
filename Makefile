@@ -17,9 +17,6 @@ MD_FILES=$(shell find ./pages -type f \
 				 	| sed "s/posts\/20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]-/posts\//")
 HTML_FILES=$(MD_FILES:.md=.html)
 
-debug:
-	@echo $(HTML_FILES)
-
 all: $(HTML_FILES)
 	@cp -r assets/ $(DST)
 
@@ -53,3 +50,7 @@ clean:
 .PHONY: serve
 serve: all
 	@cd $(DST); python3 -m http.server
+
+.PHONY: serve
+debug:
+	@echo $(HTML_FILES)
