@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+${head.html()}
+</head>
+<body>
+$if(title)$
+  <header>
+    <h1>$if(title)$$title$ –$endif$thara.dev</h1>
+  </header>
+$endif$
+  <div role="main">
+    <article>
+$if(toc)$
+<nav id="$idprefix$TOC">
+$toc$
+</nav>
+$endif$
+$body$
+    </article>
+  </div>
+<footer>
+${footer.html()}
+</footer>
+</body>
+</html>
