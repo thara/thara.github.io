@@ -18,7 +18,6 @@ MD_FILES=$(shell find ./pages -type f \
 HTML_FILES=$(MD_FILES:.md=.html)
 
 all: $(HTML_FILES)
-	@cp -r assets/ $(DST)
 
 $(DST)/posts.html: pages/posts.md
 	@mkdir -p $(TMP_DIR)
@@ -44,7 +43,7 @@ $(DST)/%.html: pages/%.md
 
 .PHONY: clean
 clean:
-	@rm -rf $(DST)
+	@rm $(HTML_FILES)
 	@rm -rf $(TMP_DIR)
 
 .PHONY: serve

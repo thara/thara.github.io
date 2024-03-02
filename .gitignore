@@ -1,5 +1,5 @@
 bin
-public
+public/**/*.html
 thara.github.io
 
 .tmp
