@@ -12,3 +12,6 @@ Software Engineer, Geek and Dad of twins in Aichi, Japan.
 - Keybase: [thara](https://keybase.io/thara)
 - Nostr: npub13sul93y05vjn8fp4j0fmme6l7ucdml08ruwf2fs67knylfhguyuqcftknc
 
+---
+
+- [Posts](./posts.html)
