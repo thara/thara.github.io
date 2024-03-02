@@ -1,4 +1,5 @@
 DST=public2
+DATA_DIR=.pandoc
 
 ifdef CI
 	BASE_URL=https://thara.dev
@@ -8,7 +9,7 @@ endif
 
 YEAR=$(shell date +%Y)
 
-PANDOC_OPT=-t html -f gfm+yaml_metadata_block --template=template -V base_url=$(BASE_URL) -V year=$(YEAR)
+PANDOC_OPT=-t html -f gfm+yaml_metadata_block -V base_url=$(BASE_URL) -V year=$(YEAR) --data-dir=$(DATA_DIR)
 
 MD_FILES=$(shell ls -d $$(find ./pages -type f) | sed 's/^\.\/pages/$(DST)/g')
 HTML_FILES=$(MD_FILES:.md=.html)
