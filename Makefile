@@ -18,6 +18,7 @@ md:
 	echo $(HTML_FILES)
 
 all: $(HTML_FILES)
+	@cp -r assets/ $(DST)
 
 $(DST)/%.html: pages/%.md
 	@mkdir -p $(dir $@)
@@ -25,7 +26,7 @@ $(DST)/%.html: pages/%.md
 
 .PHONY: clean
 clean:
-	@rm -f $(HTML_FILES)
+	@rm -rf $(DST)
 
 .PHONY: serve
 serve: all
