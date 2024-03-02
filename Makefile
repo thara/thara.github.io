@@ -1,5 +1,5 @@
-DST=public2
-TMP_DIR=tmp
+DST=public
+TMP_DIR=.tmp
 DATA_DIR=.pandoc
 
 ifdef CI

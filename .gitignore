@@ -2,4 +2,5 @@ bin
 public
 thara.github.io
 
-tmp
+.tmp
+.obsidian
