@@ -28,22 +28,22 @@ $(DST)/posts.html: pages/posts.md
 	@cp -f pages/posts.md $(TMP_DIR)/posts.md
 	@for f in $(shell find ./pages/posts -type f | sort -r); do \
 		url=`echo $$f | sed "s/.md/.html/" | sed "s/^.\/pages\///" | sed "s/20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]-//"`;\
-		pandoc -s $$f --template=template-listitem-link.md --metadata url=$$url --data-dir=$(DATA_DIR) >> $(TMP_DIR)/posts.md; \
+		pandoc -s $$f --template=list-item-link.md --metadata url=$$url --data-dir=$(DATA_DIR) >> $(TMP_DIR)/posts.md; \
 	done
 	@mkdir -p $(dir $@)
-	@pandoc -s $(TMP_DIR)/posts.md -o $@ $(PANDOC_OPT) --template=template
+	@pandoc -s $(TMP_DIR)/posts.md -o $@ $(PANDOC_OPT) --template=base
 
 $(DST)/posts/%.html: pages/posts/20??-??-??-%.md
 	@mkdir -p $(dir $@)
-	@pandoc -s $< -o $@ $(PANDOC_OPT) --template=template-post
+	@pandoc -s $< -o $@ $(PANDOC_OPT) --template=post.html
 	@page_dir=`echo $@ | sed "s/\.html//"`; \
 	mkdir -p $$page_dir ;\
 	url=`echo $@ | sed "s/^$(DST)//"`; \
-	pandoc -s $< -o $$page_dir/index.html $(PANDOC_OPT) --metadata url=$$url --template=template-redirect.html
+	pandoc -s $< -o $$page_dir/index.html $(PANDOC_OPT) --metadata url=$$url --template=redirect.html
 
 $(DST)/%.html: pages/%.md
 	@mkdir -p $(dir $@)
-	@pandoc -s $< -o $@ $(PANDOC_OPT) --template=template
+	@pandoc -s $< -o $@ $(PANDOC_OPT) --template=base
 
 .PHONY: clean
 clean:
