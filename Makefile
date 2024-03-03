@@ -57,6 +57,6 @@ clean:
 serve: all
 	@cd $(DST); python3 -m http.server
 
-.PHONY: serve
+.PHONY: debug
 debug:
 	@echo $(HTML_FILES)
