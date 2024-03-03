@@ -1,5 +1,4 @@
 ---
-title: "thara.dev"
 ---
 
 Software Engineer, Geek and Dad of twins in Aichi, Japan.
