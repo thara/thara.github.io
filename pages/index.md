@@ -1,4 +1,5 @@
 ---
+og_type: website
 ---
 
 Software Engineer, Geek and Dad of twins in Aichi, Japan.
