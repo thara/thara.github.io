@@ -18,25 +18,30 @@ MD_FILES=$(shell find ./$(SRC) -type f \
 				 	| sed "s/posts\/20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]-/posts\//")
 HTML_FILES=$(MD_FILES:.md=.html)
 
-all: $(HTML_FILES)
+POST_MD_FILES=$(shell find ./posts -type f \
+				 	| sed 's/^\.\/posts/$(DST)\/posts/g' \
+				 	| sed "s/20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]-//")
+POST_HTML_FILES=$(POST_MD_FILES:.md=.html)
 
-$(DST)/posts.html: $(SRC)/posts.md
-	@mkdir -p $(TMP_DIR)
-	@cp -f $(SRC)/posts.md $(TMP_DIR)/posts.md
-	@for f in $(shell find ./$(SRC)/posts -type f | sort -r); do \
-		url=`echo $$f | sed "s/.md/.html/" | sed "s/^.\/$(SRC)\///" | sed "s/20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]-//"`;\
-		pandoc -s $$f --template=list-item-link.md --metadata url=$$url --data-dir=$(DATA_DIR) >> $(TMP_DIR)/posts.md; \
-	done
-	@mkdir -p $(dir $@)
-	@pandoc -s $(TMP_DIR)/posts.md -o $@ $(PANDOC_OPT) --template=base
+all: $(HTML_FILES) $(POST_HTML_FILES)
 
-$(DST)/posts/%.html: $(SRC)/posts/20??-??-??-%.md
+$(DST)/posts/%.html: posts/20??-??-??-%.md
 	@mkdir -p $(dir $@)
 	@pandoc -s $< -o $@ $(PANDOC_OPT) --template=post.html
 	@page_dir=`echo $@ | sed "s/\.html//"`; \
 	mkdir -p $$page_dir ;\
 	url=`echo $@ | sed "s/^$(DST)//"`; \
 	pandoc -s $< -o $$page_dir/index.html $(PANDOC_OPT) --metadata url=$$url --template=redirect.html
+
+$(DST)/posts.html: $(SRC)/posts.md
+	@mkdir -p $(TMP_DIR)
+	@cp -f $(SRC)/posts.md $(TMP_DIR)/posts.md
+	@for f in $(shell find ./posts -type f | sort -r); do \
+		url=`echo $$f | sed "s/.md/.html/" | sed "s/20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]-//"`;\
+		pandoc -s $$f --template=list-item-link.md --metadata url=$$url --data-dir=$(DATA_DIR) >> $(TMP_DIR)/posts.md; \
+	done
+	@mkdir -p $(dir $@)
+	@pandoc -s $(TMP_DIR)/posts.md -o $@ $(PANDOC_OPT) --template=base
 
 $(DST)/%.html: $(SRC)/%.md
 	@mkdir -p $(dir $@)
