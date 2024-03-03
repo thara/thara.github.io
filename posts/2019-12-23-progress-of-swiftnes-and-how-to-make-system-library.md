@@ -1,6 +1,6 @@
 ---
-layout: post
 title: Swift製ファミコンエミュレータの進捗、そしてCライブラリへのSwiftバインディング開発の一例
+published: '2019-12-23'
 tags:
   - swift
   - advent-calendar

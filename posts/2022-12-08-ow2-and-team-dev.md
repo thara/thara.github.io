@@ -1,6 +1,7 @@
 ---
 title: Overwatch2とチーム開発
 date: '2022-12-08 '
+published: '2022-12-08'
 tags:
   - advent-calendar
 ---

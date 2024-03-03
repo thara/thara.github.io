@@ -1,5 +1,6 @@
 ---
 title: Djangoアプリケーションのモジュール構成再考
+published: '2017-01-26'
 tags: [python, django]
 ---
 

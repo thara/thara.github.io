@@ -1,7 +1,7 @@
 ---
-layout: post
 title: Kotlinでは関数呼び出しの次のlambdaリテラルがパースできない
 description: Kotlinにおけるパースできないlambdaリテラルについて調べた
+published: '2019-05-22'
 tags:
   - kotlin
 ---

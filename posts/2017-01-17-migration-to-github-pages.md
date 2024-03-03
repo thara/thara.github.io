@@ -1,5 +1,6 @@
 ---
 title: ブログをGithub Pagesに移行した
+published: '2017-01-17'
 ---
 
 昨年、ブログをGhost(Self-Hosting)に移行したけど、どうしてもプレーンテキストの安心感が忘れられず、Github PagesもといJekyllに戻してしまった。。。   

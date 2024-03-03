@@ -1,1 +1,1 @@
-- [$title$]($url$)
+- $published$: [$title$]($url$)

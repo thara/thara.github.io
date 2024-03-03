@@ -1,6 +1,7 @@
 ---
 title: ブログをGhostに移行した
 date: '2016-08-10 17:11:17'
+published: '2016-08-10'
 tags:
 - ghost-tag
 ---

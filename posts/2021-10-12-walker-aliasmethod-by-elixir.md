@@ -1,6 +1,7 @@
 ---
 title: ElixirでWalker's alias method実装した
 date: '2021-10-12 02:00:00'
+published: '2021-10-12'
 tags: [elixir]
 ---
 

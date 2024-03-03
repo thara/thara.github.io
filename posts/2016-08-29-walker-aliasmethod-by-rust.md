@@ -1,6 +1,7 @@
 ---
 title: RustでWalker's alias method実装した
 date: '2016-08-29 15:26:00'
+published: '2016-08-29'
 tags: [rust]
 ---
 

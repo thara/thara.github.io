@@ -1,5 +1,6 @@
 ---
 title: ゲームサーバー管理サービス Agones
+published: '2018-06-26'
 tags: [game-dev, agones]
 ---
 

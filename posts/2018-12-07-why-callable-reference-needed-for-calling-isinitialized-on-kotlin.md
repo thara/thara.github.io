@@ -1,6 +1,6 @@
 ---
-layout: post
 title: Kotlinの.isInitialized呼び出しになぜCallableReferenceの指定が必要なのか
+published: '2018-12-07'
 tags: [kotlin]
 ---
 

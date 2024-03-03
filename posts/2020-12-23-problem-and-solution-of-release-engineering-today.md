@@ -1,6 +1,7 @@
 ---
 layout: post
 title: 現在のRelease Engineering上の課題とその解決案
+published: '2020-12-23'
 tags:
   - advent-calendar
 ---

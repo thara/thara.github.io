@@ -1,6 +1,7 @@
 ---
 title: NVIDIA Shield tabletをリコールした
 date: '2016-12-15 16:37:59'
+published: '2016-12-15'
 tags:
 - device
 ---

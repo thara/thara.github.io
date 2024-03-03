@@ -1,6 +1,7 @@
 ---
 title: Solid所感
 date: '2022-12-30'
+published: '2022-12-30'
 ---
 
 ちょっと遅れたけど、[「Web3はWebじゃない」とWebの父が断言](https://www.axion.zone/web3-9/) を読んで。

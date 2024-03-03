@@ -1,6 +1,7 @@
 ---
 title: メタバースプラットフォーム clusterのserverについて（2021応用編）
 date: '2021-12-24 23:00:00'
+published: '2021-12-24'
 tags:
   - advent-calendar
 ---

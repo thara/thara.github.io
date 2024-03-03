@@ -1,5 +1,6 @@
 ---
 title: WatchKitでBackground中にHaptic feedbackする
+published: '2018-03-07'
 tags: [ios]
 ---
 

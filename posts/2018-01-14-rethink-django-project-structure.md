@@ -1,5 +1,6 @@
 ---
 title: Djangoプロジェクト構成 再考
+published: '2018-01-14'
 tags: [python, django]
 ---
 

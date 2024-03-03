@@ -1,6 +1,7 @@
 ---
 title: "design doc: 朝活"
 date: '2023-12-22'
+published: '2023-12-22'
 ---
 
 この記事は [クラスター Advent Calendar 2023](https://qiita.com/advent-calendar/2023/cluster) シーズン1の23日目の記事です。   

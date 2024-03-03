@@ -6,7 +6,12 @@ ${head.html()}
 <body>
   <header>
     <h1>$title$</h1>
-    created: <time>$date$</time>
+    <ul>
+      <li>published: <time>$published$</time></li>
+$if(last_modified)$
+      <li>last modified: <time>$last_modified$</time></li>
+$endif$
+    </ul>
   </header>
   <div role="main">
     <article>

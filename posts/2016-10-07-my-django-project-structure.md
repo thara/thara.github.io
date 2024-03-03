@@ -1,7 +1,8 @@
 ---
 title: 個人的によく採用するDjangoプロジェクト構成
 date: '2016-10-07 17:13:43'
-last_modified_at: '2018-01-14'
+published: '2016-10-17'
+last_modified: '2018-01-14'
 tags: [python, django]
 ---
 

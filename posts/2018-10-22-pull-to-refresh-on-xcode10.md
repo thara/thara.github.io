@@ -1,6 +1,6 @@
 ---
-layout: post
 title: UITableViewControllerでPull-to-Refresh Xcode10版
+published: '2018-10-22'
 tags: [ios]
 ---
 

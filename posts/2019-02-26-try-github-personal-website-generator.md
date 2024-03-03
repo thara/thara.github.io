@@ -1,7 +1,7 @@
 ---
-layout: post
 title: GitHubのPersonal website generatorを使ってみた
 description: 先日、GitHubがdevドメインで `Personal website generator` なるものを公開したので、試しに使ってみた。
+published: '2019-02-26'
 tags: [github, jekyll]
 ---
 

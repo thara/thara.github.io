@@ -1,7 +1,7 @@
 ---
-layout: post
 title: Agones動作確認 2019-03現在
 description: Agonesの最新をローカルで動かそうと思ったが予想以上にハマってしまったので、2019-03現段階でのサンプルを動かすまでをメモっておく。
+published: '2019-03-31'
 tags: [agones, kubernetes]
 ---
 

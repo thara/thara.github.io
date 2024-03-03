@@ -1,6 +1,7 @@
 ---
 title: 子育てとclusterとキャリアパス
 date: '2022-12-21'
+published: '2022-12-21'
 tags:
   - advent-calendar
 ---

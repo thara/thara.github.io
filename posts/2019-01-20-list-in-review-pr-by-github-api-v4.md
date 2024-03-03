@@ -1,7 +1,7 @@
 ---
-layout: post
 title: GitHub API v4でレビューPRを一覧にするスクリプトを書いた
 description: GitHub API v4 + graphql-clientによるレビューPRを一覧にするスクリプトの公開
+published: '2019-01-20'
 tags: [ruby, github, graphql]
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: Githubのアカウント名を変えた
+published: '2017-06-18'
 ---
 
 Githubのアカウント名を `tomochikahara` から `thara` に変えた。

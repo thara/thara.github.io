@@ -1,5 +1,6 @@
 ---
 title: 名古屋Ruby会議03に行ってきた
+published: '2017-02-12'
 ---
 
 [名古屋Ruby会議03](http://regional.rubykaigi.org/nagoya03/) に行ってきた。   

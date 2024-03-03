@@ -1,6 +1,7 @@
 ---
 title: 中規模Djangoアプリケーションのモジュール構成
 date: '2016-12-09 16:42:23'
+published: '2016-12-09'
 tags: [python, django]
 ---
 

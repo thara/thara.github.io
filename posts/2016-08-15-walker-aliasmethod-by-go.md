@@ -1,6 +1,7 @@
 ---
 title: Go言語でWalker's alias method実装した
 date: '2016-08-15 13:17:30'
+published: '2016-08-15'
 tags:
 - golang
 ---

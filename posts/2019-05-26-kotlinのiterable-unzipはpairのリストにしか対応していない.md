@@ -1,7 +1,7 @@
 ---
-layout: post
 title: KotlinのIterable.unzipはPairのリストにしか対応していない
 description: KotlinのIterable.unzipはPairにしか対応していないのでTriple用の拡張メソッドを作ったときのメモ
+published: '2019-05-26'
 tags:
   - kotlin
 ---

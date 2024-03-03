@@ -1,7 +1,7 @@
 ---
-layout: post
 title: Rustのクロージャ内で外側のスコープのimmutableな変数をmutableな変数に同名で束縛したいときにつかうマクロ
 description: Rustのクロージャ内で外側のスコープのimmutableな変数をmutableな変数に同名で束縛したいときにつかうマクロ
+published: '2019-04-30'
 tags: [rust]
 ---
 

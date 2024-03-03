@@ -1,5 +1,6 @@
 ---
 title: 株式会社Misoca に転職した
+published: '2018-07-02'
 ---
 
 - from: [ワンダープラネット株式会社](https://wonderpla.net/) （2013/10～2018/6）[^1]

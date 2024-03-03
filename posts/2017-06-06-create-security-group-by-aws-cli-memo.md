@@ -1,5 +1,6 @@
 ---
 title: aws-cliでSecurityGroupを作成するときのメモ
+published: '2017-06-06'
 ---
 
 これも毎回ググってる気がするのでメモ。

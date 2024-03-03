@@ -1,7 +1,7 @@
 ---
-layout: post
 title: Trelloボード検索できるAlfred 4 workflow作った
 description: Trelloボード検索できるAlfred 4 workflow作った
+published: '2019-06-30'
 tags:
   - rust
 ---
