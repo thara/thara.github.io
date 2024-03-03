@@ -5,7 +5,7 @@ og_type: website
 Software Engineer, Geek and Dad of twins in Aichi, Japan.
 
 - GitHub: [@thara](https://github.com/thara)
-- Bluesky:  [thara@thara.jp](https://bsky.app/profile/thara.jp)
+- Bluesky:  [thara](https://bsky.app/profile/thara.jp)
 - X(Twitter): [@zetta1985](https://twitter.com/zetta1985)
 - Twitch: [tharadev](https://twitch.tv/tharadev)
 - LinkedIn: [Tomochika Hara](https://www.linkedin.com/in/tomochikahara/)
