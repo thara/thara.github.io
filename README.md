@@ -6,37 +6,18 @@ My personal web site, hosting at https://thara.dev
 
 ## Requirements
 
-- go 1.x later
-- [just](https://github.com/casey/just)
+- pandoc 2.19 later
 
 ## Usage
 
-### Serve the generated site locally
-
-`just serve`
+`make clean serve`
 
 ### Deploy via GitHub Action
 
-The GitHub Action ([publish.yml](./.github/workflows/publish.yml)) is available to
-build and deploy automatially.
+The GitHub Action ([publish.yml](./.github/workflows/publish.yml)) is available to build and deploy automatially.
 
 - `master` branch (Source)
 - `gh-pages` branch (GitHub Pages)
-
-## Note
-
-### Markdown frontmatter
-
-| key   | description |
-| ----  | ------------|
-| title | page title  |
-| date  | page created timestamp (used as order in post list) |
-| path  | overwrite destination path |
-
-### Templating
-
-- pages/posts/*.md -> templates/post.html
-- pages/*.md -> templates/base.html
 
 ## Author
 
