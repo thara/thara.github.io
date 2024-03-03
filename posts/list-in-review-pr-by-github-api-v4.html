@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>GitHub API
+v4でレビューPRを一覧にするスクリプトを書いた - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="GitHub API
+v4でレビューPRを一覧にするスクリプトを書いた - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="GitHub API
+v4でレビューPRを一覧にするスクリプトを書いた - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>GitHub API v4でレビューPRを一覧にするスクリプトを書いた</h1>
+    <ul>
+      <li>published: <time>2019-01-20</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>レビュー対象のPRをサクッとCLIで確認したいなーと思い、
+せっかくならGitHub API
+v4を使おうと思ってGraphQLクライアントを探したら、GitHub自体が <a
+href="https://github.com/github/graphql-client">github/graphql-client</a>
+というGraphQLクライアントを公開していたので、それを使ってみた。</p>
+<p>実際のクエリを投げる前に、以下のようにHTTPクライアントの初期化やスキーマの読み込みが必要。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span> <span class="vs">&#39;graphql/client&#39;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span> <span class="vs">&#39;graphql/client/http&#39;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="cn">TOKEN</span> <span class="kw">=</span> <span class="cn">ENV</span><span class="kw">[</span><span class="vs">&#39;GITHUB_ACCESS_TOKEN&#39;</span><span class="kw">]</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="cn">ENDPOINT</span> <span class="kw">=</span> <span class="vs">&#39;https://api.github.com/graphql&#39;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="cf">module</span> <span class="dt">GitHub</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="cn">HTTP</span> <span class="kw">=</span> <span class="dt">GraphQL</span><span class="kw">::</span><span class="dt">Client</span><span class="kw">::</span><span class="cn">HTTP</span><span class="at">.new</span>(<span class="cn">ENDPOINT</span>) <span class="cf">do</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">def</span> headers(context)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>      <span class="kw">{</span><span class="vs">&#39;Authorization&#39;</span>: <span class="st">&quot;bearer </span><span class="sc">#{</span><span class="cn">TOKEN</span><span class="sc">}</span><span class="st">&quot;</span> <span class="kw">}</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">end</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Schema</span> <span class="kw">=</span> <span class="dt">GraphQL</span><span class="kw">::</span><span class="dt">Client</span><span class="at">.load_schema</span>(<span class="cn">HTTP</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Client</span> <span class="kw">=</span> <span class="dt">GraphQL</span><span class="kw">::</span><span class="dt">Client</span><span class="at">.new</span>(<span class="wa">schema: </span><span class="dt">Schema</span>, <span class="wa">execute: </span><span class="cn">HTTP</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span></code></pre></div>
+<p>ここでは、 <code>REVIEW</code>
+というラベルがつけられたPRをリポジトリごとに一覧する。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode ruby"><code class="sourceCode ruby"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>org <span class="kw">=</span> <span class="cn">ARGV</span><span class="kw">[</span><span class="dv">0</span><span class="kw">]</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="dt">InReviewPullRequestQuery</span> <span class="kw">=</span> <span class="dt">GitHub</span><span class="kw">::</span><span class="dt">Client</span><span class="at">.parse</span> <span class="kw">&lt;&lt;-</span><span class="cf">&quot;GRAPHQL&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="do">  query($org:String!) {</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="do">      organization(login: $org) {</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="do">      repositories(first: 100) {</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="do">        nodes {</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="do">          pullRequests(labels: &quot;REVIEW&quot;, states: [OPEN], first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="do">            edges {</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="do">              node {</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="do">                number</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="do">                title</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="do">                url</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="do">                repository {</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="do">                  nameWithOwner</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="do">                }</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="do">              }</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="do">            }</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="do">          }</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="do">        }</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="do">      }</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="do">    }</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="do">  }</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="cf">GRAPHQL</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>result <span class="kw">=</span> <span class="dt">GitHub</span><span class="kw">::</span><span class="dt">Client</span><span class="at">.query</span>(<span class="dt">InReviewPullRequestQuery</span>, <span class="wa">variables: </span><span class="kw">{</span><span class="wa">org: </span>org<span class="kw">}</span>)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>prs <span class="kw">=</span> result<span class="at">.data.organization.repositories.nodes.flat_map</span>(<span class="kw">&amp;</span><span class="wa">:pull_requests</span>)<span class="at">.flat_map</span>(<span class="kw">&amp;</span><span class="wa">:edges</span>)<span class="at">.flat_map</span>(<span class="kw">&amp;</span><span class="wa">:node</span>)</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>repos <span class="kw">=</span> prs<span class="at">.group_by</span><span class="kw">{|</span>pr<span class="kw">|</span> pr<span class="at">.repository.name_with_owner</span><span class="kw">}</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>repos<span class="at">.each</span> <span class="cf">do</span> <span class="kw">|</span>repo_name, prs<span class="kw">|</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">puts</span> <span class="st">&quot;- </span><span class="sc">#{</span>repo_name<span class="sc">}</span><span class="st">&quot;</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>  prs<span class="at">.each</span> <span class="cf">do</span> <span class="kw">|</span>pr<span class="kw">|</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">puts</span> <span class="st">&quot;  - [</span><span class="sc">#{</span>pr<span class="at">.title</span><span class="sc">}</span><span class="st"> #</span><span class="sc">#{</span>pr<span class="at">.number</span><span class="sc">}</span><span class="st">](</span><span class="sc">#{</span>pr<span class="at">.url</span><span class="sc">}</span><span class="st">)&quot;</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>  <span class="cf">end</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span></code></pre></div>
+<p>GraphQLのクエリを文字列で書いているところは、 <a
+href="https://developer.github.com/v4/explorer/">GraphQL API
+Explorer</a> で実際にクエリを投げて検証できる。
+Variableとかも対応しているし、補完も効くので、とても使いやすい。</p>
+<p>GraphQLは、cURLで手軽に動作確認できないだろうと今まで手をつけてなかったけど、
+API
+Explorerみたいなのがあると簡単に動作確認できてDX良いな、と思った。</p>
+<p>API
+Explorerで書いたクエリを共有するような機能があると、もっと捗りそう。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Gunicorn起動中にUnixドメインソケットが消える - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Gunicorn起動中にUnixドメインソケットが消える - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Gunicorn起動中にUnixドメインソケットが消える - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Gunicorn起動中にUnixドメインソケットが消える</h1>
+    <ul>
+      <li>published: <time>2017-07-06</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>会社のデベロッパーブログでも書いたけど再現手順は記載してなかったので、改めて。</p>
+<p>Gunicorn 19.6.0 をthread
+workerで稼働していると、max_requestsに達してworker
+threadが再起動したときにUnixドメインソケットが削除される現象にあった。</p>
+<p>以下、再現手順。</p>
+<h2 id="事前準備">事前準備</h2>
+<ul>
+<li>Python 3.6</li>
+<li><a href="https://github.com/h2o/h2o">h2o</a> : Unixドメインソケット
+プロキシ用</li>
+<li><a href="https://github.com/wg/wrk">wrk</a> :
+ベンチマークツール</li>
+</ul>
+<pre><code>$ pip install gunicorn==19.6.0 bottle==0.12.13</code></pre>
+<p>以下のPythonモジュールを作成しておく。</p>
+<p>web.py (WSGIアプリケーション)</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># -*- coding:utf-8 -*-</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> bottle <span class="im">import</span> route, run, default_app</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">@route</span>(<span class="st">&#39;/&#39;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> index():</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="st">&#39;Hello World&#39;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>app <span class="op">=</span> default_app()</span></code></pre></div>
+<p>config.py (gunicorn設定)</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>bind <span class="op">=</span> <span class="st">&#39;unix:/tmp/gunicorn.sock&#39;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>backlog <span class="op">=</span> <span class="dv">2048</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>workers <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>threads <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>worker_class <span class="op">=</span> <span class="st">&#39;sync&#39;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>worker_connections <span class="op">=</span> <span class="dv">1000</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>timeout <span class="op">=</span> <span class="dv">30</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>keepalive <span class="op">=</span> <span class="dv">2</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>max_requests <span class="op">=</span> <span class="dv">512</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>spew <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>daemon <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>pidfile <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>umask <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>user <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>group <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>tmp_upload_dir <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="co">#   Logging</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>errorlog <span class="op">=</span> <span class="st">&#39;-&#39;</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>loglevel <span class="op">=</span> <span class="st">&#39;info&#39;</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>accesslog <span class="op">=</span> <span class="st">&#39;-&#39;</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>access_log_format <span class="op">=</span> <span class="st">&#39;</span><span class="sc">%(h)s</span><span class="st"> </span><span class="sc">%(l)s</span><span class="st"> </span><span class="sc">%(u)s</span><span class="st"> </span><span class="sc">%(t)s</span><span class="st"> &quot;</span><span class="sc">%(r)s</span><span class="st">&quot; </span><span class="sc">%(s)s</span><span class="st"> </span><span class="sc">%(b)s</span><span class="st"> &quot;</span><span class="sc">%(f)s</span><span class="st">&quot; &quot;</span><span class="sc">%(a)s</span><span class="st">&quot;&#39;</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Process naming</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>proc_name <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Server hooks</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> post_fork(server, worker):</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    server.log.info(<span class="st">&quot;Worker spawned (pid: </span><span class="sc">%s</span><span class="st">)&quot;</span>, worker.pid)</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pre_fork(server, worker):</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> pre_exec(server):</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    server.log.info(<span class="st">&quot;Forked child, re-executing.&quot;</span>)</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> when_ready(server):</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    server.log.info(<span class="st">&quot;Server is ready. Spawning workers&quot;</span>)</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> worker_int(worker):</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    worker.log.info(<span class="st">&quot;worker received INT or QUIT signal&quot;</span>)</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>    <span class="co">## get traceback info</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>    <span class="im">import</span> threading, sys, traceback</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>    id2name <span class="op">=</span> <span class="bu">dict</span>([(th.ident, th.name) <span class="cf">for</span> th <span class="kw">in</span> threading.<span class="bu">enumerate</span>()])</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>    code <span class="op">=</span> []</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> threadId, stack <span class="kw">in</span> sys._current_frames().items():</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>        code.append(<span class="st">&quot;</span><span class="ch">\n</span><span class="st"># Thread: </span><span class="sc">%s</span><span class="st">(</span><span class="sc">%d</span><span class="st">)&quot;</span> <span class="op">%</span> (id2name.get(threadId,<span class="st">&quot;&quot;</span>),</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>            threadId))</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> filename, lineno, name, line <span class="kw">in</span> traceback.extract_stack(stack):</span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>            code.append(<span class="st">&#39;File: &quot;</span><span class="sc">%s</span><span class="st">&quot;, line </span><span class="sc">%d</span><span class="st">, in </span><span class="sc">%s</span><span class="st">&#39;</span> <span class="op">%</span> (filename,</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>                lineno, name))</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> line:</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>                code.append(<span class="st">&quot;  </span><span class="sc">%s</span><span class="st">&quot;</span> <span class="op">%</span> (line.strip()))</span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>    worker.log.debug(<span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>.join(code))</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> worker_abort(worker):</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>    worker.log.info(<span class="st">&quot;worker received SIGABRT signal&quot;</span>)</span></code></pre></div>
+<p>h2o.conf (h2o設定)</p>
+<pre><code>listen:
+  port: 18080
+hosts:
+  default:
+    paths:
+      &quot;/&quot;:
+        proxy.reverse.url: http://[unix:/tmp/gunicorn.sock]/
+        proxy.preserve-host: ON
+    access-log: /dev/stdout</code></pre>
+<h2 id="サーバー起動">サーバー起動</h2>
+<p>gunicorn 起動</p>
+<pre><code>$ gunicorn web:app -c config.py</code></pre>
+<p>h2o 起動</p>
+<pre><code>$ h2o -c h2o.conf</code></pre>
+<h2 id="再現">再現</h2>
+<pre><code>$ wrk -t10 -c200 -d10s http://127.0.0.1:18080</code></pre>
+<p>以下のようなエラーログが出力される。<br />
+（場合によっては、スレッド数や接続数等のオプションを変更する必要があるかもしれない）</p>
+<pre><code>[2017-02-18 01:26:57 +0900] [56927] [INFO] Autorestarting worker after current request.
+ - - [18/Feb/2017:01:26:57 +0900] &quot;GET / HTTP/1.1&quot; 200 11 &quot;-&quot; &quot;-&quot;
+ - - [18/Feb/2017:01:26:57 +0900] &quot;GET / HTTP/1.1&quot; 200 11 &quot;-&quot; &quot;-&quot;
+ - - [18/Feb/2017:01:26:57 +0900] &quot;GET / HTTP/1.1&quot; 200 11 &quot;-&quot; &quot;-&quot;
+[2017-02-18 01:26:57 +0900] [56927] [ERROR] Exception in worker process
+Traceback (most recent call last):
+  File &quot;/Users/thara/.pyenv/versions/3.6.0/envs/gunicorn_bug/lib/python3.6/site-packages/gunicorn/arbiter.py&quot;, line 557, in spawn_worker
+    worker.init_process()
+  File &quot;/Users/thara/.pyenv/versions/3.6.0/envs/gunicorn_bug/lib/python3.6/site-packages/gunicorn/workers/gthread.py&quot;, line 109, in init_process
+    super(ThreadWorker, self).init_process()
+  File &quot;/Users/thara/.pyenv/versions/3.6.0/envs/gunicorn_bug/lib/python3.6/site-packages/gunicorn/workers/base.py&quot;, line 132, in init_process
+    self.run()
+  File &quot;/Users/thara/.pyenv/versions/3.6.0/envs/gunicorn_bug/lib/python3.6/site-packages/gunicorn/workers/gthread.py&quot;, line 240, in run
+    s.close()
+  File &quot;/Users/thara/.pyenv/versions/3.6.0/envs/gunicorn_bug/lib/python3.6/site-packages/gunicorn/sock.py&quot;, line 123, in close
+    os.unlink(self.cfg_addr)
+FileNotFoundError: [Errno 2] No such file or directory: &#39;/tmp/gunicorn.sock&#39;</code></pre>
+<p>この状態になると、Unixドメインソケットのファイルが紛失するため、gunicornに対してリバースプロキシ（この例だとH2O）から接続できなくなり、
+HTTPリクエストしたクライアントには502が返される。</p>
+<p>該当issueは <a
+href="https://github.com/benoitc/gunicorn/issues/1298">これ</a>。
+該当箇所は19.6.0での修正箇所であるため、19.6.0より前のバージョンではこの現象は発生しないと思われる。
+また、このissueはすでに対応されcloseされているが、まだリリースには至っていない。</p>
+<h2 id="回避方法">回避方法</h2>
+<p>現状では、Unixドメインソケットを使わず、portのlistenのみで対応するのが確実。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

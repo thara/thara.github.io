@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Python製関数型プログラミング言語Coconut - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Python製関数型プログラミング言語Coconut - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Python製関数型プログラミング言語Coconut - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Python製関数型プログラミング言語Coconut</h1>
+    <ul>
+      <li>published: <time>2016-08-10</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>結構前に日課のHacker
+Newsチェックしてたら、Python製関数型プログラミング言語 <a
+href="http://coconut-lang.org">Coconut</a> というのが上位に来ていた。
+<code>simple, elegant, Pythonic functional programming language</code>
+、らしい。</p>
+<p>特徴をまとめると、</p>
+<ul>
+<li>Python言語のスーパーセット
+<ul>
+<li>PythonソースコードはCoconutのソースコードとして読み込める</li>
+<li>そのせいで「純粋関数型プログラミング言語ではないよ」とのこと。</li>
+</ul></li>
+<li><code>pipeline-style programming</code>
+<ul>
+<li>F# の前方パイプライン演算子(<code>|&gt;</code>)</li>
+</ul></li>
+<li>もっといい感じ?のラムダ式
+<ul>
+<li><code>(x) -&gt; x ** 2</code></li>
+<li>Pythonの <code>lambda x: x **2</code>
+よりはわかりやすい、かな？</li>
+</ul></li>
+<li>関数の部分適用
+<ul>
+<li>関数の後ろに<code>$</code>をつける必要がある</li>
+</ul></li>
+<li>パターンマッチ
+<ul>
+<li>関数定義も <code>@addpattern</code>
+デコレータを使用すればパターンマッチできる</li>
+</ul></li>
+<li>分割代入</li>
+<li>中置記法</li>
+<li>代数的データ型
+<ul>
+<li><code>data</code> キーワードで定義する</li>
+</ul></li>
+<li>オペレータ関数
+<ul>
+<li>オペレータを <code>()</code> で囲うと関数として扱える</li>
+</ul></li>
+<li>関数合成
+<ul>
+<li><code>..</code> 演算子を使う</li>
+</ul></li>
+<li>遅延リスト
+<ul>
+<li><code>[]</code> ではなく <code>(|</code> と <code>|)</code>
+でlistを作ると、遅延リストになる</li>
+</ul></li>
+<li>並列プログラミング
+<ul>
+<li>今のところ、<code>map</code>
+の各要素に対する関数適用を並列に処理できる<code>parallel_map</code>だけかな・・・？</li>
+</ul></li>
+<li>末尾再帰最適化
+<ul>
+<li><code>@recursive</code> デコレータを使う</li>
+</ul></li>
+</ul>
+<p>ちょっと触ってみた感じだと、実用性重視っぽい。 <code>pip</code>
+でインストールできるしコンパイル結果はPythonコードとして出力されるので、PyPIに公開できるライブラリをCoconutを使って書くことができる。
+関数の部分適応に<code>$</code>
+が必要なのは関数型プログラミング言語を普段使っている人からしたら眉唾かもしれないけれど、
+動的型付けプログラミング言語であることとパースのしやすさを考えると、意味あるテイクかな、と。</p>
+<p>Pythonを置き換えるというより、関数型プログラミングが得意な領域にピンポイントでCoconutを使う、というのが目指しているところなのだろう。</p>
+<p>Pythonは大学教育でよく用いられる言語なので、そこからCoconutを通じて、関数型プログラミングが広く認知されるようになってくれたら嬉しい。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

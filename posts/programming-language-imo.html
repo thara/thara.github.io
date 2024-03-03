@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>各プログラミング言語の個人的位置付け - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="各プログラミング言語の個人的位置付け - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="各プログラミング言語の個人的位置付け - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>各プログラミング言語の個人的位置付け</h1>
+    <ul>
+      <li>published: <time>2016-08-11</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>なんとなくまとめておこうかな、と思ったので。あくまで個人的な所感。<br />
+あとになるほど、適当になっている気がするが気にしない。</p>
+<h2 id="c言語">C言語</h2>
+<p>OSとか組み込みとかミドルウェアとかを実装するときに使われる。
+言語仕様がシンプルな点が好み。いつかはじっくりやりたい。</p>
+<h2 id="c">C++</h2>
+<p>パフォーマンスが求められるゲームのフロントエンドを実装するときに（まだ）必要。<br />
+それ以外では出来る限り避けたい・・・</p>
+<h2 id="c-1">C#</h2>
+<p>Unity3dで初めて使った程度。感想としてはJavaとあまり変わらない。<br />
+みんなが言うほど、素晴らしい言語だとは思わなかった。
+delegateはdelegateではないし・・・</p>
+<h2 id="java">Java</h2>
+<p>できればもう触れたくないけど、Androidアプリの実装時には必要なときが出てくる、かな・・・？<br />
+Elasticsearchで採用されているのは、なぜだろう・・・？</p>
+<h2 id="scala">Scala</h2>
+<p>そういえば、自分が初めて参加した勉強会のテーマがコップ本だった。<br />
+言語仕様は好みだし、これで色々書いてみたいと思うけど、コンパイルが重いのがネックで個人的にBETするのに躊躇する。<br />
+仕事では<a href="http://gatling.io">Gatling</a>を使っている。
+今はそれぐらいのDSLを書くレベルで、アプリケーションを書くまでのレベルでは採用しづらい。教育コストも高いし。</p>
+<h2 id="groovy">Groovy</h2>
+<p>gradleでしか使ってない・・・</p>
+<h2 id="javascript">JavaScript</h2>
+<p>できれば使いたくないが使わざるを得ない度ダントツ1位。<br />
+最近の仕様はよく知らない。クラスってもう使えるんだっけ？<br />
+Webフロントエンド周りのフレームワークには手を付けたくない。Reactは気になるけど。
+使うならElmかな。</p>
+<h2 id="dart">Dart</h2>
+<p>Googleが見た夢。自分も信じてたんだけどな・・・
+言語仕様は割と好きだし、Webブラウザでのセキュリティも考慮されていたので、期待してたんだけど・・・残念。</p>
+<h2 id="perl">Perl</h2>
+<p>ほとんど使ったことない。使ったとしてもワンライナーぐらい。これから先も使うことはないだろう・・・<br />
+言語仕様もあまり好みではない。</p>
+<h2 id="php">PHP</h2>
+<p>仕事で使わざるを得ない場合もあるけど、できれば使いたくない。<br />
+テンプレート言語としてなら良いけど、アプリケーションを書くにはもっと良いプラットフォームがあるし、Webアプリケーションを書くにしても動作モデルが他のLLと違っていて、知識の応用が効かない。</p>
+<h2 id="python">Python</h2>
+<p>現在メインに使っている言語。<br />
+シンプルな言語仕様が良い。誰が書いても似通ったコードになる点はもっと評価されるべき。<br />
+高速化はCython、JITならPyPyと、実績がある複数のランタイムを使いこなしたい。ユースケースにあったランタイム選択は重要。<br />
+それでもやっぱり型がほしい・・・Optional Typingでもいいから・・・<br />
+機械学習や数値計算の分野はまだ試してない。さっさとPython3に移行しましょう。</p>
+<h2 id="ruby">Ruby</h2>
+<p>書いていて楽しいけど、Pythonがあるのでメインでは使ってない。<br />
+いろんな書き方でできるのがメリットでもありデメリットでもある。
+Railsは嫌い。URL
+dispatcherをrouting、TemplateからのHTML生成をrenderingと呼称するのが許せない。</p>
+<h2 id="go言語">Go言語</h2>
+<p>今、Web
+APIサーバーを書くならこれ。サーバーサイドアプリケーションやマルチプラットフォームに配布するツールとして採用されることが多いイメージ。フロントエンドは苦手だと思う。<br />
+シンプルな言語仕様なので割と好き。例外がないのが良い。<br />
+ジェネリクスがないのが賛否両論だが、実際にハードに使ってみてから評価したい。</p>
+<h2 id="rust">Rust</h2>
+<p>ゲームのフロントエンドでC++の代わりに採用するならこれかなぁ？<br />
+サーバーサイドではどうだろう・・・？<br />
+ポインタ周りの仕様が、新たな考え方を自分にインストールしてくれそうな予感。<br />
+言語仕様は割りと好きだけど、1.0から保守的になったと聞く。これからどう発展していくかが気になる。</p>
+<h2 id="lisp系">LISP系</h2>
+<p>触ったことない。いつかは触らなきゃと思ってそのまま。</p>
+<h2 id="ocaml">OCaml</h2>
+<p>浅井本を最後まで読まなきゃ・・・</p>
+<h2 id="haskell">Haskell</h2>
+<p>すごいH本は読んだけど、まだこれで自由にプログラムを書ける気がしない・・・<br />
+モナドはわかったようなわからないような。使えはするけど、自ら定義できない気がする。</p>
+<h2 id="f">F#</h2>
+<p>興味あるけど、触ることになることはまず無いだろうと思われる。</p>
+<h2 id="swift">Swift</h2>
+<p>iOSアプリ書くなら避けては通れない。 <a
+href="http://www.amazon.co.jp/dp/4798139513">本</a>
+を書いただけあって、結構気に入っている。最近、言語仕様が膨らんでいる気がして心配。<br />
+Objective-Cは全く知らないので、項目にも挙げない。</p>
+<h2 id="kotlin">Kotlin</h2>
+<p>Androidアプリ書くならJavaよりこっち。
+まだちょっとしか試してないけど、良さげ。</p>
+<h2 id="d言語">D言語</h2>
+<p>LINEスタンプ買いました。</p>
+<h2 id="erlang">Erlang</h2>
+<p>需要があるのはわかっているけど、どうにも手をつけられない・・・<br />
+どうしても必要なときになったら触ってみようかな、と。<br />
+Elixirは使うシチュエーションがなかなか無いと思う。そもそもBeamVM上でアプリケーション書く気がしないので、Erlangで十分な気がしている。</p>
+<h2 id="lua">Lua</h2>
+<p>mjolnirで使ったことがあるぐらい。あとRedisに組み込める。
+アプリケーションの実装に使うというよりは、ピンポイントでDSLの代わりに採用されるイメージ。</p>
+<p>なんか疲れたので、この辺で。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

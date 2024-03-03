@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>aws-cliでEC2インスタンスを作成するときのメモ - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="aws-cliでEC2インスタンスを作成するときのメモ - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="aws-cliでEC2インスタンスを作成するときのメモ - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>aws-cliでEC2インスタンスを作成するときのメモ</h1>
+    <ul>
+      <li>published: <time>2017-06-01</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>毎回ググってる気がするのでメモ。</p>
+<h2 id="準備">準備</h2>
+<h4 id="使用するツール">使用するツール</h4>
+<p><a href="https://github.com/aws/aws-cli">aws-cli</a></p>
+<h4 id="インストール">インストール</h4>
+<pre><code>$ pip install awscli</code></pre>
+<h4 id="プロファイル設定">プロファイル設定</h4>
+<pre><code>$ aws configure --profile ${プロファイル名｝</code></pre>
+<p>アクセスキーID、シークレットアクセスキー、デフォルトリージョン、出力フォーマットを指定。
+出力フォーマットはだいたい <code>json</code> にしてる。 <code>jq</code>
+コマンドで使うので。</p>
+<h2 id="ec2インスタンス作成">EC2インスタンス作成</h2>
+<h3 id="キーペア作成">キーペア作成</h3>
+<p>（必要であれば）</p>
+<pre><code>$ aws --profile=${プロファイル名｝ ec2 create-key-pair \
+    --key-name ${新規キー名} \
+    --query &#39;KeyMaterial&#39; \
+    --output text \
+    &gt; $HOME/.ssh/${保存する秘密鍵のファイル名} \
+    &amp;&amp; chmod 400 $HOME/.ssh/${保存する秘密鍵のファイル名}</code></pre>
+<h3 id="インスタンス作成">インスタンス作成</h3>
+<p><em>設定するSecurityGroupとSubnetを事前に調べておく</em></p>
+<pre><code>$ aws --profile=${プロファイル名｝ ec2 describe-security-groups | jq -c &quot;.SecurityGroups[] | [.GroupName,.GroupId]&quot;
+$ aws --profile=${プロファイル名｝ ec2 describe-subnets | jq -c &quot;.Subnets[] | [.Tags[0].Value,.SubnetId]&quot;</code></pre>
+<pre><code>aws --profile=${プロファイル名｝ ec2 run-instances \
+    --image-id ami-923d12f5 \
+    --instance-type t2.micro \
+    --key-name ${新規キー名} \
+    --security-group-ids ${SecurityGroupのGroupID} \
+    --subnet-id ${SubnetのSubnetID} \
+    --monitoring Enabled=true</code></pre>
+<p>インスタンスIDを控えておく。</p>
+<h3 id="インスタンスに名前を付ける">インスタンスに名前を付ける</h3>
+<pre><code>$ aws --profile=${プロファイル名} ec2 create-tags --resources ${インスタンスID} --tags Key=Name,Value=&quot;${インスタンス名}&quot;</code></pre>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

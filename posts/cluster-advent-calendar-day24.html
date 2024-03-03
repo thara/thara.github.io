@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>メタバースプラットフォーム
+clusterのserverについて（2021応用編） - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="メタバースプラットフォーム
+clusterのserverについて（2021応用編） - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="メタバースプラットフォーム
+clusterのserverについて（2021応用編） - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>メタバースプラットフォーム
+clusterのserverについて（2021応用編）</h1>
+    <ul>
+      <li>published: <time>2021-12-24</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>この記事は <a
+href="https://qiita.com/advent-calendar/2021/cluster">クラスター Advent
+Calendar 2021</a> の24日目の記事です。<br />
+昨日は <a href="https://github.com/anoriqq">anoriqq</a> の<a
+href="https://zenn.dev/anoriqq/articles/507472a92debb2">ジュニアなエンジニアを助けたクラスター社のメンタリング</a>
+でした。</p>
+<hr />
+<p>ごきげんよう。<a
+href="https://corp.cluster.mu/">クラスター株式会社</a>
+のプラットフォーム事業部 engineチームの <a
+href="https://github.com/thara">thara</a> です。</p>
+<p><a
+href="https://www.wantedly.com/companies/cluster/post_articles/294991">名古屋からではなく愛知県瀬戸市からリモートワークで働いています。</a><br />
+今まで週1オフィス出社だったのが、来年から月1出社になるようです。やったね。</p>
+<p>この記事では、 2019年のadvent calendarで kyokomi が書いた<a
+href="https://kyokomi.hatenablog.com/entry/2019/12/17/000000">clusterのserverについて（入門編）</a>
+の 後編
+として、もう少し技術的に踏み込んだ2021年現在の構成とその課題について書きます。</p>
+<h2 id="全体構成">全体構成</h2>
+<p><img src="../../images/cluster-2021-overview.jpg"
+alt="Overview" /></p>
+<p>おおよその構成は2019年と変わっていませんが、改めて述べると</p>
+<ul>
+<li>APIサーバー
+<ul>
+<li>RDBをバックエンドにおき、transactionalな処理を担う。</li>
+<li>一部の機能では、リアルタイム通信サーバーに直接messageをpublishする。</li>
+</ul></li>
+<li>room server
+<ul>
+<li>いわゆるリアルタイム通信サーバー</li>
+<li>clusterクライアントで表現される3D空間（以下、ルーム）上の複数ユーザーの同期を担う。</li>
+<li>それぞれのインスタンスが個別のルームに割り当てられる。</li>
+</ul></li>
+<li>アダプター
+<ul>
+<li>入門編時代には存在しなかったもの。</li>
+<li>リアルタイム通信サーバーからRDBに直接アクセスしたくなかったため設けられた中間レイヤー。</li>
+</ul></li>
+<li>UGCパイプライン
+<ul>
+<li>入門編には書かれていなかったもの。</li>
+<li>UGC（user generated
+contentsの略）のアップロードから配信までの一連の処理を担う。</li>
+</ul></li>
+</ul>
+<p>この4つが主なサービスで全てGoで書かれています。この他にもバッチだったり細かなAWS
+lambdaがいくつも動いていたりしています。</p>
+<p>ちなみに、この記事では詳細は書かないですがフロントエンドとして以下があります。</p>
+<ul>
+<li>Webアプリケーション
+<ul>
+<li><a href="https://cluster.mu/"><a
+href="https://cluster.mu/">https://cluster.mu/</a></a> これ</li>
+<li>React製のSPA。SSRはしていない。</li>
+</ul></li>
+<li>クライアントアプリ
+<ul>
+<li>Android, iOS, Windows, macOS, SteamVR対応HMD, Oculus
+Quest2に対応。</li>
+<li>3DフロントエンドはUnity製で、mobile
+appからはUaaLとして組み込んでいる。</li>
+</ul></li>
+</ul>
+<p>では、上記のサーバーサイドの主要なサービスについて見ていきましょう。<br />
+ちなみに、それぞれに課題を書いてますがあくまでも自分個人の見解なのでご了承下さい。</p>
+<h2 id="apiサーバー">APIサーバー</h2>
+<p><img src="../../images/cluster-2021-apiserver.jpg"
+alt="API server" /></p>
+<p>HTTPSエンドポイントを持つ、clusterの中心となるサービスです。
+ユーザーの作成、認証/認可、ワールド/イベント管理、UGC管理、決済など、その役割は多岐に渡ります。
+クライアントアプリから直接リクエストを受け取るだけでなく、後述のUGCパイプラインや全体構成の図には描かれていない他のコンポーネントからも使用される内部APIを提供しています。</p>
+<p>以下のようなライブラリやサービスを使用しています。</p>
+<ul>
+<li>goa v1
+<ul>
+<li>swagger.jsonによってクライアントコードを自動生成している</li>
+</ul></li>
+<li>sqlx
+<ul>
+<li>ORMは使っておらず、SQLコードを直書き</li>
+</ul></li>
+<li><a href="https://github.com/ClusterVR/migorate">migorate</a>
+<ul>
+<li>独自DBマイグレーションツール</li>
+</ul></li>
+<li>aws-sdk-go
+<ul>
+<li>主にS3, DynamoDBなど</li>
+</ul></li>
+<li>Firebase Auth</li>
+<li>Stripe</li>
+</ul>
+<p>稼働環境はAmazon
+ECSです。これ以降のサービスも同様ですが、ほぼ毎日本番環境にデプロイしていて、リリースのためにメンテナンス期間を設けるようなことはしていません。</p>
+<p>CI/CD環境はCircle
+CIを使っていて、DBスキーマダンプによる差分検知やテストコード自動生成など、テストコードはかなり厚く書かれています(たぶん)。</p>
+<p>clusterのサービス群の中では一般的なWeb
+APIそのものなので、新規joinした方がコントリビュートしやすいサービスではあります。先ほど少し触れたように、WebフロントエンドもSPA化されているため、HTMLテンプレートを扱うことはありません。</p>
+<h3 id="課題">課題</h3>
+<p>5年前から保守し続けていたコードベースがだいぶ膨らんでいます。そもそもclusterはVRイベントサービスとして作られ、VRソーシャルルームアプリ、バーチャルイベントプラットフォーム、バーチャルSNSを経て、現在はメタバースプラットフォームへと、ピボットほどではないにしろフォーカスする領域が変わっています。既存データを維持しつつ、ここまでサービスが変遷してきたことによって、現在では不適切な抽象化になっている箇所があることは事実です。</p>
+<p>今後は、適切な抽象化によるプラットフォームとしての安定性・信頼性・変更可能性を確保しつつ、toB案件などのグロース領域において柔軟かつ迅速に発展していけるような切り分けをしていけると良いのではないかと思います。チーム構成もソフトウェア開発チーム1つだったのがengineチームとgrowthチームに分かれたことも相まって、その動きが加速していけると良いなぁと考えています。</p>
+<h2 id="room-server">room server</h2>
+<p><img src="../../images/cluster-2021-fermion.jpg" alt="Fermion" /></p>
+<p>Unityクライアントと直接接続しリアルタイム通信を担う、ルーム内の3D体験を支える要となるサービスです。
+APIサーバーのようなリクエスト-レスポンスモデルではなく、clientがmessageをroom
+serverに送信し、serverは必要に応じてルーム内の状態をclientにpushすることで接続しているクライアント間の状態を同期します。</p>
+<p>各クライアント間でやりとりするmessageには、以下のようなものがあります。</p>
+<ul>
+<li>アバターの位置・向きなどの状態や、3点・6点トラッキング情報</li>
+<li>ボイスチャット音声データ</li>
+<li>ルーム内のアイテムの位置・向きや所有権</li>
+<li>エモーション</li>
+</ul>
+<p>その他にも、リアルタイム通信サーバー自らクライアントに対してbroadcastするmessageがあります。</p>
+<ul>
+<li>入室しているユーザーの情報</li>
+<li>音量やBGM、会場AssetBundle URLなどのルームの設定情報</li>
+</ul>
+<p>実装は、MQTTを独自に拡張したプロトコルを扱うTCP
+serverです。一般的なユースケースに合致するものはないため、フレームワークを使わず、ドメインにフォーカスした完全な独自実装になっています。
+内部アーキテクチャはpubsubをベースとしつつ、各クライアントはサーバー上ではActorとしてモデル化しており、sync.Mutexやchannelなどを用いた非同期プログラミングの出番が多いですし、パフォーマンス要件もAPIサーバーより厳しいです。</p>
+<p>稼働環境はAPIサーバーと異なり、EC2インスタンス1台の上でたかだか1プロセスが動作します。AutoScaling
+Groupによってあらかじめroom
+serverが稼働するEC2インスタンス群をプールしておき、新たなルームが作成された際にそのプールからEC2インスタンスをデタッチしてルームを割り当て、クライアントアプリから直接接続可能な状態にします。
+ここら辺の詳細は <a
+href="https://resources.awscloud.com/aws-summit-online-japan-2020-on-demand-industry-3-12034/cus-64-aws-summit-online-2020-cluster-inc">バーチャル
+SNS の裏側</a> を参照してください。</p>
+<p>ECSやk8sなどを使わないのかと疑問に思われるかもしれないですが、かなりシステムリソースやネットワーク帯域を使うサービスであり「抽象レイヤーをできるだけ減らして如何にスペックを引き出すか」というクラウドネイティブとは真逆の思想があるため、今のような構成になっています。</p>
+<h3 id="課題-1">課題</h3>
+<p>実はroom
+serverに移行したのは今年に入ってからで、以前はずっとサードパーティのpure
+なMQTTサーバーを使っていました。サードパーティなので内部の実装に手を入れておらず（Go製ではなかった）messageをbroadcastするために全く別のプログラムをクライアントアプリと同じようにMQTTサーバーに接続し、broadcast用のmessageをpublishする、ということをしていました。それ以外にも、pureなMQTTサーバーを前提として設計された機能などが少なくないです。その制約がなくなった今room
+serverだからこそ成せる機能をどんどん実装していきたいのですが、pure
+MQTTサーバーを前提とした設計をベースとしたプロトコルの後方互換性を保ちつつ日々のリリースを通じてマイグレーションをしていかねばなりません。</p>
+<p>幸い、マイグレーション自体は必要に応じてですが特に大きな問題もなく進んでおり、マイグレーションに対する勘所もわかってきたので、機能追加が進んでいる状態ではあります。</p>
+<h2 id="アダプター">アダプター</h2>
+<p><img src="../../images/cluster-2021-fermo.jpg" alt="Fermo" /></p>
+<p>room
+serverからRDBで管理されているデータにアクセスするための中間レイヤーであるgRPCサーバーです。</p>
+<p>マイクロサービスパターンでいう<a
+href="https://docs.microsoft.com/ja-jp/azure/architecture/patterns/anti-corruption-layer">破損防止レイヤー</a>なのですが「破損しているわけじゃないしな・・・」と思って、とりあえずアダプターと言ってみました。</p>
+<p>特筆すべきことがあるサービスではないのですが、APIサーバーから管理されるRDB上のデータと、room
+serverで扱うデータ形式の変換を担う、意外と重要なサービスです。</p>
+<p>Amazon ECS上で稼働していて、ALBのgRPCサポートを使っています。</p>
+<h3 id="課題-2">課題</h3>
+<p>ALBのgRPCサポートのおかげで負荷分散はだいぶ楽なのですが、取りうるgRPC固有metricsがHTTP/HTTPSのそれと比べて圧倒的に少ないです。今はgRPC
+request
+countぐらいしかありません。せめてHTTPCode_ELB_4XX_Countみたいに、gRPCステータスコードごとのmetricsが欲しいところ...</p>
+<h2 id="ugcパイプライン">UGCパイプライン</h2>
+<p><img src="../../images/cluster-2021-ugcpipeline.jpg"
+alt="UGC pipeline" /></p>
+<p>ユーザーがアップロードしたUGCをダウンロード可能にする、サーバーレスアーキテクチャ上に構成された一連の機能群です。</p>
+<p>大まかに以下のようなプロセスをたどります。</p>
+<ol type="1">
+<li>APIサーバーがS3 upload policyを発行する</li>
+<li>クライアントがS3 upload policyを使ってS3にUGCをアップロード</li>
+<li>S3イベントをSNS subscriptionに通知</li>
+<li>SNS subscriptionをsubscribeしているAWS lambdaが起動</li>
+<li>AWS lambdaでなんやかんやする</li>
+<li>UGCのvalidation</li>
+<li>配信用S3バケットにアップロード</li>
+<li>APIサーバーにinternal APIを通じてUGC管理情報を登録</li>
+<li>上記のAWS lambda実行中、進捗状況をDynamoDBに保存する。</li>
+<li>クライアントはAPI
+Gatewayで公開されたステータスAPIを通じてDynamoDBの進捗状況を把握し、完了を待つ。</li>
+</ol>
+<p>このパイプライン上で扱っているUGCで主なものは「アバターデータ」(<a
+href="https://vrm.dev/">VRM</a>) です。
+最近AvatarMakerが実装されましたが、これもアップロード処理やreductionなどの一部の処理はUGCパイプライン上に構築されています。AvatarMaker自体の詳細は
+<a
+href="https://yutopp.hateblo.jp/entry/2021/12/08/000022">AvatarMakerを支える技術
+(cluster) - yutopp's blog</a> を参照してください。</p>
+<p>AWS
+lambdaも今までのサービス同様Goで実装されていますが、特にフレームワークなどは用いていません。</p>
+<p>アバターデータを扱う箇所ではVRMや<a
+href="https://github.com/KhronosGroup/glTF">glTF</a>などの深いドメイン知識が求められます。APIサーバーやroom
+serverを常日頃触っているサーバーエンジニアではなく、アバター周りに明るいエンジニアがGoで書いてます。
+正直、LOD関連のコードは今の自分にはよくわかってません（難しい。だいたいここら辺の領域での自分の成果はCIでPR出した時に圧縮結果のdiffが見れるようにはしたとかのCI/CD周りが中心だと思う）。</p>
+<p>CI/CDは、細かなlambdaがいくつもあるのでGitHub Actionsでpath
+baseのworkflowを使っています。デプロイには <a
+href="https://github.com/fujiwara/lambroll">lambroll</a>
+を使わせてもらっています。（fujiwaraさん、--alias-to-latestオプション追加してくれて助かりました
+<span class="emoji" data-emoji="pray">🙏</span> ）</p>
+<h3 id="課題-3">課題</h3>
+<p>部分的なユニットテストはあるのですが、全体を包括したテストが欠けています。
+（LocalStack入れなきゃ...）</p>
+<p>昔はC#やJSで書かれていたlambdaをGoに移行した経緯があり、マイグレーション時のインパクトを減らすためにあえてGoらしくないコードがあったりなかったりしています。
+（だいたい自分のせい。ごめんね...）</p>
+<h2 id="まとめ">まとめ</h2>
+<p>clusterを支えるサーバーサイドの主なサービスを4つ紹介しました。
+本当は監視系とか分析系とかにも触れたかったのですが、力尽きました。</p>
+<p>これらのサービスを、4人（うち1人はAndroidアプリ兼任）+2人(インターン&amp;業務委託)
+でメンテしています。人が圧倒的に足りてない...！</p>
+<p>clusterは、ここ5年の間にかなり進化しました。これから1,2年後どうなっていくかわかりませんが、<a
+href="https://note.com/cluster_official/n/n7049166820d4#IEiOd">clusterカンファレンス</a>で
+<a href="https://twitter.com/c_c_kato">@c_c_kato</a>
+が言っていたように、メタバースをコミュニティと共に定義し作り上げていく、その創造性を発揮するためのプラットフォームとして発展していくことには変わりありません。</p>
+<p>クラスターでは、未知の問題に対して既存の体験を最大限に尊重しつつも、アグレッシブにサービスを成長させていけるようなソフトウェアエンジニアを募集しています。</p>
+<p><a href="https://recruit.cluster.mu/engineer/"><a
+href="https://recruit.cluster.mu/engineer/">https://recruit.cluster.mu/engineer/</a></a></p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

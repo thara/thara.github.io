@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>aws-cliでSecurityGroupを作成するときのメモ - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="aws-cliでSecurityGroupを作成するときのメモ - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="aws-cliでSecurityGroupを作成するときのメモ - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>aws-cliでSecurityGroupを作成するときのメモ</h1>
+    <ul>
+      <li>published: <time>2017-06-06</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>これも毎回ググってる気がするのでメモ。</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> GROUP_ID=<span class="kw">`</span><span class="ex">aws</span> <span class="at">--profile</span><span class="op">=</span><span class="va">${</span><span class="er">プロファイル名｝ ec2 create-security-group \</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="er">    --group-name ${新規セキュリティグループ名</span><span class="va">}</span> <span class="dt">\</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--description</span> <span class="va">${</span><span class="er">説明</span><span class="va">}</span> <span class="at">--vpc-id</span> <span class="va">${VPC</span><span class="er">のID</span><span class="va">}</span> <span class="kw">|</span> <span class="ex">jq</span> <span class="at">-r</span> <span class="st">&quot;.GroupId&quot;</span><span class="kw">`</span></span></code></pre></div>
+<p>全開になっている22ポートを塞ぐ・・・が、そんなルールがないと怒られた。<br />
+昔はデフォで22空いてたような気がしたけど、気のせい・・・？</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> aws <span class="at">--profile</span><span class="op">=</span><span class="va">${</span><span class="er">プロファイル名｝ ec2 revoke-security-group-ingress \</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="er">    --group-id $GROUP_ID --protocol tcp --port 22 --cidr &quot;0.0.0.0/0&quot;</span></span></code></pre></div>
+<p>一例）　<code>192.168.1.0/24</code>
+からの22ポートと80ポートへのアクセスを許可</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> aws <span class="at">--profile</span><span class="op">=</span><span class="va">${</span><span class="er">プロファイル名｝ ec2 authorize-security-group-ingress --group-id $GROUP_ID \</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="er">    --protocol tcp --port 22 --cidr &quot;192.168.1.0/24&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="er">$ aws --profile=${プロファイル名｝ ec2 authorize-security-group-ingress --group-id $GROUP_ID \</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="er">    --protocol tcp --port 80 --cidr &quot;192.168.1.0/24&quot;</span></span></code></pre></div>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

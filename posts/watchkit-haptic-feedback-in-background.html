@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>WatchKitでBackground中にHaptic feedbackする - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="WatchKitでBackground中にHaptic
+feedbackする - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="WatchKitでBackground中にHaptic
+feedbackする - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>WatchKitでBackground中にHaptic feedbackする</h1>
+    <ul>
+      <li>published: <time>2018-03-07</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>ちょっとApple
+Watch　のアプリで作ってみたいものがあって、そのとき調べたことのメモ。</p>
+<p>やりたいことはタイトルの通りなのだが、通常はバックグラウンドまたは非アクティブ時に
+Haptic feedback（触覚フィードバック）を行うことはできない。</p>
+<p>例外として、ワークアウト中、つまり、<code>HKWorkoutSession</code>
+オブジェクトを <code>HKHealthStore#start</code> に渡してから
+<code>HKHealthStore#end</code> を呼ぶまでのみ、
+<code>WKInterfaceDevice.current().play</code> が意図通りに動作する。</p>
+<p>以下は、一定間隔で Haptic feedback を行うサンプルコード。
+Watch上のボタンと、 <code>toggleSession</code> が connect
+されている想定。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">WatchKit</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">Foundation</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">HealthKit</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> InterfaceController<span class="op">:</span> <span class="dt">WKInterfaceController</span><span class="op">,</span> <span class="dt">HKWorkoutSessionDelegate</span> <span class="op">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> <span class="va">healthStore</span> <span class="op">=</span> HKHealthStore<span class="op">()</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> <span class="va">currentWorkoutSession</span><span class="op">:</span> HKWorkoutSession<span class="op">?</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> <span class="va">isRunning</span><span class="op">:</span> Bool<span class="op">?</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">weak</span> <span class="kw">var</span> <span class="va">timer</span><span class="op">:</span> Timer<span class="op">?</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> <span class="va">intervalSec</span><span class="op">:</span> TimeInterval <span class="op">=</span> <span class="fl">300.0</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">// awake, willActivateなどの定義は省略</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">@IBAction</span> <span class="kw">func</span> <span class="fu">toggleSession</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> isRunning <span class="op">==</span> <span class="kw">true</span> <span class="op">{</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>            isRunning <span class="op">=</span> <span class="kw">false</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>            <span class="cf">guard</span> <span class="kw">let</span> <span class="va">session</span> <span class="op">=</span> currentWorkoutSession <span class="cf">else</span> <span class="op">{</span> <span class="kw">return</span> <span class="op">}</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>            healthStore<span class="op">.</span>end<span class="op">(</span>session<span class="op">)</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>            <span class="kw">self</span><span class="op">.</span>timer<span class="op">?.</span>invalidate<span class="op">()</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>            isRunning <span class="op">=</span> <span class="kw">true</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>            <span class="kw">let</span> <span class="va">conf</span> <span class="op">=</span> HKWorkoutConfiguration<span class="op">()</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>            conf<span class="op">.</span>activityType <span class="op">=</span> <span class="op">.</span>other</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>            <span class="cf">do</span> <span class="op">{</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>                <span class="kw">let</span> <span class="va">session</span> <span class="op">=</span> <span class="cf">try</span> HKWorkoutSession<span class="op">(</span>configuration<span class="op">:</span> conf<span class="op">)</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>                session<span class="op">.</span>delegate <span class="op">=</span> <span class="kw">self</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>                currentWorkoutSession <span class="op">=</span> session</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>                healthStore<span class="op">.</span>start<span class="op">(</span>session<span class="op">)</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>                </span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>                <span class="kw">self</span><span class="op">.</span>timer<span class="op">?.</span>invalidate<span class="op">()</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>                <span class="kw">self</span><span class="op">.</span>timer <span class="op">=</span> Timer<span class="op">.</span>scheduledTimer<span class="op">(</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>                    timeInterval<span class="op">:</span> <span class="kw">self</span><span class="op">.</span>intervalSec<span class="op">,</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>                    target<span class="op">:</span> <span class="kw">self</span><span class="op">,</span> selector<span class="op">:</span> #selector<span class="op">(</span>InterfaceController<span class="op">.</span>play<span class="op">),</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>                    userInfo<span class="op">:</span> <span class="kw">nil</span><span class="op">,</span> repeats<span class="op">:</span> <span class="kw">true</span><span class="op">)</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span> <span class="cf">catch</span> <span class="kw">let</span> <span class="va">e</span> <span class="kw">as</span> NSError <span class="op">{</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>                <span class="cf">fatalError</span><span class="op">(</span><span class="st">&quot;*** Unable to create the workout session: </span><span class="er">\(</span><span class="st">e.localizedDescription) ***&quot;</span><span class="op">)</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>        WKInterfaceDevice<span class="op">.</span>current<span class="op">().</span>play<span class="op">(.</span>start<span class="op">)</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">@objc</span> <span class="kw">func</span> <span class="fu">play</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>        WKInterfaceDevice<span class="op">.</span>current<span class="op">().</span>play<span class="op">(.</span>success<span class="op">)</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>        NSLog<span class="op">(</span><span class="st">&quot;Played&quot;</span><span class="op">)</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>    <span class="co">// workoutSessionなどの定義も省略</span></span></code></pre></div>
+<p>このとき忘れてはいけないのは、いくつかのプロジェクトの設定が必要だということ。</p>
+<ul>
+<li>HealthKit.framework を Link Binary with Libraries に追加する</li>
+<li>WatchKit Extention projectの entitlements ファイルの
+<code>HealthKit</code> Key の Value を <code>YES</code> に設定する</li>
+<li>WatchKit Extention projectの Info.plist 内の
+<code>Required background modes (Watch)</code> Key の Value に
+<code>Workout Processing</code> を設定する</li>
+</ul>
+<p>（一番最後の Info.plist の更新を忘れて、上記サンプルコードの Timer
+が動作しなくてハマった）</p>
+<hr />
+<p>やりたいことは実現はできたのだけれど、単に Background 中に Haptic
+feedback
+したいだけなのに、ワークアウトセッションにしなければいけないのが難点。</p>
+<p>上記のサンプルコードのような簡単な実装であれば、1日中ワークアウトセッション起動しっぱなしでもバッテリの減りが通常時と比べて極端に多くなる、ということはないのだが、大して運動もしてないのにアクティビティアプリに運動中だと認識されてしまう。</p>
+<p>実際に App Store
+に審査依頼を出してはいないのだけれど、おそらくリジェクトされるだろう。運動してないのにアクティビティアプリのアチーブメントを達成してしまうのは自分としても不本意だし、誰もが嫌がると思う。</p>
+<p>結局、現在のWatchKitだと自分が作りたいものが作れなさそう、ということでこのアイディアはお蔵入りに。</p>
+<p>うーん、残念。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

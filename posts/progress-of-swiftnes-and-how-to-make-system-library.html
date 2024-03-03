@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Swift製ファミコンエミュレータの進捗、そしてCライブラリへのSwiftバインディング開発の一例 - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Swift製ファミコンエミュレータの進捗、そしてCライブラリへのSwiftバインディング開発の一例 - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Swift製ファミコンエミュレータの進捗、そしてCライブラリへのSwiftバインディング開発の一例 - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Swift製ファミコンエミュレータの進捗、そしてCライブラリへのSwiftバインディング開発の一例</h1>
+    <ul>
+      <li>published: <time>2019-12-23</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>Misocaの <a href="https://twitter.com/zetta1985">thara</a>
+です。<br />
+この記事は <a
+href="https://qiita.com/advent-calendar/2019/misoca-yayoi">Misoca+弥生
+Advent Calendar 2019 - Qiita</a> 23日目の記事です。
+遅くなってすみません...</p>
+<p>3ヶ月前にiOSDC Japan 2019にて <a
+href="https://fortee.jp/iosdc-japan-2019/proposal/92904657-beda-46fe-8ecb-b27c75ee0f16">Swiftでつくるファミコンエミュレータのススメ</a>
+というタイトルでLTをしてきました。</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/9pBPF77XQX0?start=1361" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<p>LTでは<a
+href="http://hp.vector.co.jp/authors/VA042397/nes/sample.html">NES研究室で配布されているHallo,
+WorldのサンプルROM</a> が動作したことをお伝えしました。
+あれから数ヶ月を経て、どれぐらいまで動くようになったのか、イベント会場でお話した「自分が子どもの頃にプレイしたゲームを自作エミュレータ上でプレイして、子どもの頃にクリアできなかったゲームをクリアしたい」という目標までどれぐらい近づいたのかをお伝えしたいと思います。</p>
+<h2 id="進捗">進捗</h2>
+<p>10月の半ばには、スーパーマリオブラザーズはプレイできるようになりました。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">自作エミュレータでちゃんとマリオをプレイできるようになった（音はまだ無い） <a href="https://twitter.com/hashtag/nesdev?src=hash&amp;ref_src=twsrc%5Etfw">#nesdev</a> <a href="https://t.co/apuUo851BA">https://t.co/apuUo851BA</a> <a href="https://t.co/EYLbe3SqoF">pic.twitter.com/EYLbe3SqoF</a></p>&mdash; thara (@zetta1985) <a href="https://twitter.com/zetta1985/status/1183747534109343749?ref_src=twsrc%5Etfw">October 14, 2019</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>↑のgifでは60FPS出ていないんですが、
+これは録画ソフトがCPUリソースを持っていってしまってその影響でモッサリしているだけなので、ちゃんとエミュレータ単体では60FPS出てます。
+(色々試したんだけれど、Webブラウザ上でぬるぬる動く動画撮れなかった...)</p>
+<p>ここまで動いたら、あと残すは「音」です。</p>
+<h2 id="apu">APU</h2>
+<p>ファミコンではAPU（Audio Processing
+Unit）と呼ばれるマイクロプロセッサで、プログラムから動的に設定された値を元に矩形波や三角波などを生成し、音を生成しています。</p>
+<p>そもそもオーディオプログラミングの知識が皆無だった自分は，<a
+href="http://wiki.nesdev.com/w/index.php/APU">nesdev.comのAPU関連のwiki</a>
+を読み漁り、
+理解をコードに落とし込むかのように分周器やタイマー、エンベロープ・ジェネレータなどを細かく実装していきました。</p>
+<p>そもそも用語の意味さえ分からなかった自分は、ここでだいぶ時間を食いました。<a
+href="#fn1" class="footnote-ref" id="fnref1"
+role="doc-noteref"><sup>1</sup></a></p>
+<p>さらに、実際に音を再生するためには何らかのクロスプラットフォーム対応されたライブラリを使う必要があります。
+Webブラウザ上で動作しているものは<a
+href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API">Web
+Audio
+API</a>を使用しており、自分はクロスプラットフォームのネイティブで動作するエミュレータを実装しているので参考になりません。</p>
+<p>C言語やC++製のファミコンエミュレータのコードを見てみるとSDL2のAudioを使っているものが多かったのですが
+<a
+href="http://atsushieno.hatenablog.com/entry/2017/12/07/041145">libsoundio-sharpとPInvokeGeneratorについて
+- ものがたり</a>
+を参考に、ソースコードが読みやすく、エラー関連のドキュメントがしっかり書かれた<a
+href="https://github.com/andrewrk/libsoundio">libsoundio</a>にチャレンジしてみました。</p>
+<p>当然のようにSwiftバインディングが存在しないので、Swiftから扱いやすくするためのバインディングを書くことにしました
+&lt;- イマココ</p>
+<h2
+id="swiftバインディングを少しずつ書いていく">Swiftバインディングを少しずつ書いていく</h2>
+<p>言語バインディングと言うと難しい印象ですが、C言語製のライブラリをSwiftから扱うのは非常にかんたんです。</p>
+<p>ただ単に使うぐらいであれば、Package.swiftの修正、modulemapという設定ファイル、ほんの数行のヘッダーファイルを用意するだけで、Swiftからそのライブラリの構造体や関数を直接使うことができます。</p>
+<p>以下は <a
+href="https://github.com/andrewrk/libsoundio#synopsis">libsoundioのREADME中のサンプルコード</a>
+とほぼ同じ処理をSwiftで書いたものです。</p>
+<script src="https://gist.github.com/thara/f1a4c725d8ef743c543a4e808b06db52.js?file=main.swift"></script>
+
+<p>たしかにSwiftからC言語の構造体や関数を直接使えていますが、このままだとさすがにSwiftのコードとしては読みづらいものがあります。
+<code>UnsafeMutablePointer</code>
+は普段はめったに使わないものですし、エラーコードが<code>CInt</code>として扱われていて扱いづらく、そもそも関数の命名規則がSwiftのそれとは違います。</p>
+<p>そこで、このmain.swiftをSwiftらしくすることを当面の目的として、徐々にSwiftバインディグのコードを書いていくことにします。</p>
+<h3
+id="エラーコードをswiftでのerrorとして扱う">エラーコードをSwiftでのErrorとして扱う</h3>
+<p>まず目につくのが、このようなエラーコード判定です。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> <span class="va">err</span><span class="op">:</span> CInt <span class="op">=</span> soundio_connect<span class="op">(</span>soundio<span class="op">)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="dv">0</span> <span class="op">&lt;</span> err <span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">fatalError</span><span class="op">(</span><span class="st">&quot;error connecting: </span><span class="er">\(</span><span class="st">soundioError(err))&quot;</span><span class="op">)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<p>Swiftではエラー処理の方法に、Result, Error(いわゆる検査例外),
+fatalErrorなどといくつか方法がありますが、ライブラリ内でfatalErrorを発生させるのは不適切であり、さらに<a
+href="http://libsound.io/doc-2.0.0/soundio_8h.html#a9aed679ba44aaa7d9bcbe2fa1b1156c5">libsoundioのエラーコードの定義</a>を見るとアプリケーションがその後に復帰して継続可能なエラーの類はなさそうなので、Errorとして表現する方法を考えてみることにします。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">struct</span> SoundIOError<span class="op">:</span> <span class="dt">Error</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>   <span class="kw">public</span> <span class="kw">let</span> <span class="va">message</span><span class="op">:</span> String</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>   <span class="kw">init</span><span class="op">(</span>errorCode<span class="op">:</span> CInt<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>       <span class="kw">self</span><span class="op">.</span>message <span class="op">=</span> String<span class="op">(</span>cString<span class="op">:</span> soundio_strerror<span class="op">(</span>errorCode<span class="op">))</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>   <span class="op">}</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><a
+href="https://github.com/andrewrk/libsoundio/blob/b810bf2e9c4afc822c4843322cd08f7b36668109/src/soundio.c#L76-L96">soundio_strerror</a>
+は与えられたerrorCodeが既知のエラーコードでない場合には<code>(invalid error)</code>を返してくれるので、安心してこう書けます。</p>
+<p>そして、<code>CInt</code>がエラーコードである場合にエラーをthrowする拡張メソッドを追加します。</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">//</span><span class="al">TODO</span><span class="co"> Make internal</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">extension</span> CInt <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">@inline</span><span class="op">(</span>__always<span class="op">)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">func</span> <span class="fu">ensureSuccess</span><span class="op">()</span> <span class="kw">throws</span> <span class="op">{</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="dv">0</span> <span class="op">&lt;</span> <span class="kw">self</span> <span class="op">{</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>            <span class="kw">throw</span> SoundIOError<span class="op">(</span>errorCode<span class="op">:</span> <span class="kw">self</span><span class="op">)</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>ここではpublicとしていますが、これはmain.swiftを配置しているデモ用のビルドターゲットから一時的に呼び出すためのもので、最終的なライブラリの実装ではinternalとしてライブラリAPIとしては公開しないようにします。</p>
+<p>これで、main.swiftのエラーコードを扱っている箇所は、以下のように書けるようになりました。</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>func main() {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="va">+func main() throws {</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>     // 略</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st">-     var err: CInt = soundio_connect(soundio)</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="st">-     if 0 &lt; err {</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="st">-         fatalError(&quot;error connecting: \(soundioError(err))&quot;)</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="st">-     }</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="va">+     try soundio_connect(soundio).ensureSuccess()</span></span></code></pre></div>
+<h3
+id="optional-がnilの場合のエラーを表現">Optional<UnsafeMutablePointer>
+がnilの場合のエラーを表現</h3>
+<p>次に気になるのが、各ポインタのnil（C言語でいうNULLポインタ）チェックの箇所です。</p>
+<p>このままOptionalとして扱ってもよいのですが、コードをより説明的にするために、これもErrorとして表現してみます。</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">//</span><span class="al">TODO</span><span class="co"> Make internal</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a> <span class="kw">public</span> <span class="kw">extension</span> Optional <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">@inline</span><span class="op">(</span>__always<span class="op">)</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>     <span class="kw">func</span> <span class="fu">ensureAllocatedMemory</span><span class="op">()</span> <span class="kw">throws</span> -&gt; <span class="fu">Wrapped</span> <span class="op">{</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>         <span class="cf">guard</span> <span class="kw">let</span> <span class="va">value</span> <span class="op">=</span> <span class="kw">self</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>             <span class="kw">throw</span> SoundIOError<span class="op">(</span>message<span class="op">:</span> <span class="st">&quot;Ouf of memory: </span><span class="er">\(</span><span class="st">Wrapped.self)&quot;</span><span class="op">)</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>         <span class="op">}</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>         <span class="kw">return</span> value</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>     <span class="op">}</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a> <span class="op">}</span></span></code></pre></div>
+<p>こちらも後に非公開にするAPIとしておきます。</p>
+<p>これで、以下のようにnilチェックをErrorとして扱えるようになります。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="st">-    guard let soundio: UnsafeMutablePointer&lt;SoundIo&gt; = soundio_create() else {</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="st">-        fatalError(&quot;out of memory&quot;)</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="st">-    }</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="va">+    let soundio = try soundio_create().ensureAllocatedMemory()</span></span></code></pre></div>
+<h3 id="構造体をクラスで表現する">構造体をクラスで表現する</h3>
+<p>libsoundioで公開されている構造体は、その構造体のポインタを扱う関数とセットで扱う、つまりC言語とはいえ、オブジェクト指向で設計されたAPIです。
+よって、それらの構造体をSwiftではクラスで表現することを試みます。</p>
+<p>まず、構造体へのポインタをラップするクラスを定義します。</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="im">CSoundIO</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> SoundIO <span class="op">{</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">private</span> <span class="kw">let</span> <span class="va">internalPointer</span><span class="op">:</span> UnsafeMutablePointer<span class="op">&lt;</span>CSoundIO<span class="op">.</span>SoundIo<span class="op">&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span> <span class="kw">init</span><span class="op">()</span> <span class="kw">throws</span> <span class="op">{</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>         <span class="kw">self</span><span class="op">.</span>internalPointer <span class="op">=</span> <span class="cf">try</span> soundio_create<span class="op">().</span>ensureAllocatedMemory<span class="op">()</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">deinit</span> <span class="op">{</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        soundio_destroy<span class="op">(</span>internalPointer<span class="op">)</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><code>CSoundIO.SoundIo</code> が<code>libsoundio</code>
+が公開している構造体です。
+ここで定義した<code>SoundIO</code>クラスはインスタンス生成時に<code>soundio_create</code>を呼び出して<code>CSoundIO.SoundIo</code>のポインタを取得・保持します。
+そして、<code>deinit</code>
+によって自身のインスタンスが破棄されるタイミングで適切に
+<code>soundio_destroy</code>
+を呼び出し、保持している<code>CSoundIO.SoundIo</code>のポインタを破棄します。</p>
+<p>ちなみに、deinitはクラスでしか使えないのでSwiftの構造体として<code>SoundIO</code>を定義することはできません。</p>
+<p>さらに、他の関数呼び出しも<code>SoundIO</code>のメソッドでラップします。</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span> <span class="kw">func</span> <span class="fu">connect</span><span class="op">()</span> <span class="kw">throws</span> <span class="op">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span> soundio_connect<span class="op">(</span><span class="kw">self</span><span class="op">.</span>internalPointer<span class="op">).</span>ensureSuccess<span class="op">()</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span> <span class="kw">func</span> <span class="fu">flushEvents</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        soundio_flush_events<span class="op">(</span><span class="kw">self</span><span class="op">.</span>internalPointer<span class="op">)</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<p>これで、以下のようなSwiftらしいコードが書けるようになります。</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="st">-    let soundio = try soundio_create().ensureAllocatedMemory()</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="st">-    try soundio_connect(soundio).ensureSuccess()</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="st">-    soundio_flush_events(soundio)</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="va">+    let soundio = try SoundIO()</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="va">+    try soundio.connect()</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="va">+    soundio.flushEvents()</span></span></code></pre></div>
+<h3 id="型エイリアスで説明的にする">型エイリアスで説明的にする</h3>
+<p><code>CSoundIO.SoundIo</code>構造体を扱う関数をメソッドにしていくうえで、以下のコードを書きました。</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span> <span class="kw">func</span> <span class="fu">defaultOutputDeviceIndex</span><span class="op">()</span> <span class="kw">throws</span> -&gt; <span class="fu">CInt</span> <span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> <span class="va">index</span> <span class="op">=</span> soundio_default_output_device_index<span class="op">(</span><span class="kw">self</span><span class="op">.</span>internalPointer<span class="op">)</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">guard</span> <span class="dv">0</span> <span class="op">&lt;=</span> index <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>            <span class="kw">throw</span> SoundIOError<span class="op">(</span>message<span class="op">:</span> <span class="st">&quot;No output device found&quot;</span><span class="op">)</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> index</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">//</span><span class="al">TODO</span><span class="co"> Wrap SoundIODevice</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span> <span class="kw">func</span> <span class="fu">getOutputDevice</span><span class="op">(</span><span class="va">at</span> <span class="va">index</span><span class="op">:</span> <span class="dt">CInt</span><span class="op">)</span> <span class="kw">throws</span> -&gt; <span class="fu">UnsafeMutablePointer</span><span class="op">&lt;</span><span class="dt">CSoundIO</span>.<span class="dt">SoundIoDevice</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">guard</span> <span class="kw">let</span> <span class="va">device</span> <span class="op">=</span> soundio_get_output_device<span class="op">(</span><span class="kw">self</span><span class="op">.</span>internalPointer<span class="op">,</span> index<span class="op">)</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>            <span class="kw">throw</span> SoundIOError<span class="op">(</span>message<span class="op">:</span> <span class="st">&quot;invalid parameter value&quot;</span><span class="op">)</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> device</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<p><code>soundio_default_output_device_index</code> の戻り値は、
+<code>soundio_get_output_device</code> の引数として使っています。
+<code>CInt</code>のままだとそれがわからないので、型エイリアスを使って、よりメソッド間の関係がわかりやすいようにします。</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">typealias</span> DeviceIndex <span class="op">=</span> Int</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="kw">public</span> <span class="kw">class</span> SoundIO <span class="op">{</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 略</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span> <span class="kw">func</span> <span class="fu">defaultOutputDeviceIndex</span><span class="op">()</span> <span class="kw">throws</span> -&gt; <span class="fu">DeviceIndex</span> <span class="op">{</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> <span class="va">index</span> <span class="op">=</span> soundio_default_output_device_index<span class="op">(</span><span class="kw">self</span><span class="op">.</span>internalPointer<span class="op">)</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">guard</span> <span class="dv">0</span> <span class="op">&lt;=</span> index <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>            <span class="kw">throw</span> SoundIOError<span class="op">(</span>message<span class="op">:</span> <span class="st">&quot;No output device found&quot;</span><span class="op">)</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> DeviceIndex<span class="op">(</span>index<span class="op">)</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">//</span><span class="al">TODO</span><span class="co"> Wrap SoundIODevice</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span> <span class="kw">func</span> <span class="fu">getOutputDevice</span><span class="op">(</span><span class="va">at</span> <span class="va">index</span><span class="op">:</span> <span class="dt">DeviceIndex</span><span class="op">)</span> <span class="kw">throws</span> -&gt; <span class="fu">UnsafeMutablePointer</span><span class="op">&lt;</span><span class="dt">CSoundIO</span>.<span class="dt">SoundIoDevice</span><span class="op">&gt;</span> <span class="op">{</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">guard</span> <span class="kw">let</span> <span class="va">device</span> <span class="op">=</span> soundio_get_output_device<span class="op">(</span><span class="kw">self</span><span class="op">.</span>internalPointer<span class="op">,</span> index<span class="op">)</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>            <span class="kw">throw</span> SoundIOError<span class="op">(</span>message<span class="op">:</span> <span class="st">&quot;invalid parameter value&quot;</span><span class="op">)</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>        <span class="kw">return</span> device</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>これで、ライブラリを扱うユーザーが誤った値を<code>getOutputDevice(at:)</code>に渡す可能性が減ります。
+<a href="#fn2" class="footnote-ref" id="fnref2"
+role="doc-noteref"><sup>2</sup></a></p>
+<h3 id="生のポインタを扱う余地を残す">生のポインタを扱う余地を残す</h3>
+<p><code>CSoundIO.SoundIo</code>構造体を扱う関数を全て<code>SoundIO</code>クラスのメソッドとして定義したいところですが、このバインディングライブラリの保守の手間や元のライブラリの変更への追従を考えると、ライブラリユーザーにはある程度の柔軟性を持たせた方が良いことがあります。</p>
+<p>例えば、ライブラリユーザーは最新バージョンのライブラリで追加された関数を使いたいが、バインディングライブラリがその関数をサポートしておらず、かつ内部のポインタへのアクセスを完全にライブラリ内に閉じている場合、ライブラリユーザーはそのバインディングライブラリの使用を諦めるかforkするしか手がなくなってしまいます。</p>
+<p>よって、以下のような限定的なスコープで内部ポインタにアクセス可能な手段を提供します。</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>    <span class="kw">public</span> <span class="kw">func</span> <span class="fu">withInternalPointer</span><span class="op">(</span><span class="va">_</span> <span class="va">unsafeTask</span><span class="op">:</span> <span class="op">(</span><span class="dt">_</span> <span class="dt">pointer</span>: <span class="dt">UnsafeMutablePointer</span>&lt;<span class="dt">CSoundIO</span>.<span class="dt">SoundIo</span>&gt;<span class="op">)</span> <span class="dt">throws</span> -&gt; <span class="va">Void</span><span class="op">)</span> <span class="kw">throws</span> <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span> unsafeTask<span class="op">(</span><span class="kw">self</span><span class="op">.</span>internalPointer<span class="op">)</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<p>このメソッドは以下のように使用できます。</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>         <span class="cf">try</span> soundio<span class="op">.</span>withInternalPointer <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>             soundio_wait_events<span class="op">(</span>$<span class="dv">0</span><span class="op">)</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>         <span class="op">}</span></span></code></pre></div>
+<p>もちろん、バインディングライブラリの意図しない変更をポインタに対して行われる可能性があるので、ライブラリユーザーに注意を促すドキュメントを残しておくと良さそうです。</p>
+<h2 id="soundioクラスはほぼ完成">SoundIOクラスはほぼ完成</h2>
+<p>先程のmain.swift内で使っている<code>CSoundIO.SoundIo</code>とその関数を<code>SoundIO</code>クラスとして扱えるようになると
+以下のように大部分をSwiftらしく書けるようになります。</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="fu">main</span><span class="op">()</span> <span class="kw">throws</span> <span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> <span class="va">soundio</span> <span class="op">=</span> <span class="cf">try</span> SoundIO<span class="op">()</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> soundio<span class="op">.</span>connect<span class="op">()</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    soundio<span class="op">.</span>flushEvents<span class="op">()</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> <span class="va">outputDeviceIndex</span> <span class="op">=</span> <span class="cf">try</span> soundio<span class="op">.</span>defaultOutputDeviceIndex<span class="op">()</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> <span class="va">device</span> <span class="op">=</span> <span class="cf">try</span> soundio<span class="op">.</span>getOutputDevice<span class="op">(</span>at<span class="op">:</span> outputDeviceIndex<span class="op">)</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> <span class="va">deviceName</span> <span class="op">=</span> String<span class="op">(</span>cString<span class="op">:</span> device<span class="op">.</span>pointee<span class="op">.</span>name<span class="op">)</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    print<span class="op">(</span><span class="st">&quot;Output device: </span><span class="er">\(</span><span class="st">deviceName)&quot;</span><span class="op">)</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> <span class="va">outstream</span> <span class="op">=</span> <span class="cf">try</span> soundio_outstream_create<span class="op">(</span>device<span class="op">).</span>ensureAllocatedMemory<span class="op">()</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    outstream<span class="op">.</span>pointee<span class="op">.</span>format <span class="op">=</span> SoundIoFormatFloat32LE<span class="op">;</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    outstream<span class="op">.</span>pointee<span class="op">.</span>write_callback <span class="op">=</span> writeCallback<span class="op">;</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> soundio_outstream_open<span class="op">(</span>outstream<span class="op">).</span>ensureSuccess<span class="op">()</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> outstream<span class="op">.</span>pointee<span class="op">.</span>layout_error<span class="op">.</span>ensureSuccess<span class="op">()</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span> soundio_outstream_start<span class="op">(</span>outstream<span class="op">).</span>ensureSuccess<span class="op">()</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="kw">true</span> <span class="op">{</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>        soundio<span class="op">.</span>waitEvents<span class="op">()</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>    soundio_outstream_destroy<span class="op">(</span>outstream<span class="op">)</span></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>    soundio_device_unref<span class="op">(</span>device<span class="op">)</span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>あとは<code>CSoundIO.SoundIoDevice</code>構造体や<code>CSoundIO.SoundIoOutStream</code>構造体などが残っていますが、今まで見てきたように徐々にラッパーを書いていくことで、バインディングライブラリを完成に近づけていけると思います。</p>
+<h2 id="swift-as-an-system-programming-language">Swift as an system
+programming language</h2>
+<p>ファミコンエミュレータ実装においてAPUを実装中であること、そして、そのAPU実装のためにlibsoundioのバインディングライブラリを徐々に開発していることをご紹介しました。</p>
+<p>Swiftは、Linux上でも動作するにも限らずiOSやmacOS上での開発言語としてしか注目を浴びていませんが、C言語との相互運用性やバインディングライブラリの書きやすさ、コンパイラによる最適化など、Rustまでは行かないものの、Go言語と同じぐらいのレイヤーまでは十分に対応できるポテンシャルを秘めていると自分は考えています。</p>
+<p>ファミコンエミュレータの実装、そしてCライブラリ向けのバインディングライブラリの実装を通じて、Swiftの可能性を広げていきたいです。</p>
+<hr />
+<p><a
+href="https://qiita.com/advent-calendar/2019/misoca-yayoi">Misoca+弥生
+Advent Calendar 2019 - Qiita</a>、 次回24日は <a
+href="https://qiita.com/yayoi_ueshima">yayoi_ueshima</a>さんの「仮想通貨のやり取りを体感してみよう！」です。
+お楽しみに！</p>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li
+id="fn1"><p>Courseraで機械学習系のコースを受講してたのが一番の要因の気もする...<a
+href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li
+id="fn2"><p>Swiftの型エイリアスはコンパイル時には削除されるので、あくまでもドキュメンテーションとライブラリユーザーへの説明のためのものです<a
+href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

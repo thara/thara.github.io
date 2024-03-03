@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Agones動作確認 2019-03現在 - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Agones動作確認
+2019-03現在 - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Agones動作確認
+2019-03現在 - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Agones動作確認 2019-03現在</h1>
+    <ul>
+      <li>published: <time>2019-03-31</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>久しぶりにAgonesを調べてみたら、<a
+href="https://agones.dev/site/">Webサイト</a> ができていた。</p>
+<p>Agones本体も、ゲームサーバーの情報が得られるようになっていたり、Node.jsのSDKをサポートしたりと色々変わっていたので、Agonesの最新をローカルで動かそうと思ったが、予想以上にハマってしまったので、
+<a href="../agones-introduction">以前のAgones紹介記事</a>
+と少しかぶってしまうが、2019-03現段階でのサンプルを動かすまでをメモっておく。</p>
+<h2 id="agonesのインストール方法">Agonesのインストール方法</h2>
+<p>Agonesのインストール方法には、 Google Kubernetes Engine
+(GKE)を使うか、Minikubeを使うか、Amazon Web Services
+EKSを使うかの大きく3通りがあるが、自分は動作確認がしたいだけなので、Minikubeを選択する。
+その他2つは、まだ試してない。</p>
+<p>MinikubeではVMドライバを選択できるが、公式の<a
+href="https://agones.dev/site/docs/installation/#setting-up-a-minikube-cluster">Installation</a>どおり、VirtualBoxを使ったほうが変にハマらなくて済むと思う。
+このとき、VirtualBoxは最新のバージョンに更新しておいた方がよい。
+自分はVirtualBoxのバージョンが古くて、後述のセットアップコマンドが正常に動作しなかったので、VirtualBoxのバージョンを更新して
+<code>6.0.4 r128413</code> にした。</p>
+<p>そして、もう一つ決めておいた方がよいのが、<code>kubectl apply -f</code>
+に渡すinstall.yamlをどれにするか。
+これは、Agonesの動作確認をどのような用途で行いたいかによる。</p>
+<p>単に、Agonesというサービスを手元で動作確認したいだけであれば、公式ドキュメントのとおり、GitHubリポジトリ上においてある
+<code>install/yaml/install.yaml</code> を使えばよい。</p>
+<p>自分のようにsimple-udpなどのサンプルだけではなく、SDK周りのサンプルを触ってみたい場合は、Agonesリポジトリをgit
+cloneした上で、その作業ツリー上の <code>install/yaml/install.yaml</code>
+を使う。</p>
+<p>このとき、masterではなく、リリースブランチを使用した方がよい。<br />
+masterのinstall.yml内のテンプレートに用いるimageが、Agonesが使用するDockerレジストリ(<code>gcr.io/agones-images</code>)上にまだデプロイされていないことがあるからだ。
+<a
+href="https://github.com/GoogleCloudPlatform/agones/blob/master/build/README.md">開発者向けREADME</a>通りにやれば自分でイメージをビルドしてAgonesを立ち上げることもできるが、
+かなりの遠回りになるので、Agones自体の開発にコントリビュートしたいのでなければ避けておいた方が無難だ。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git clone https://github.com/GoogleCloudPlatform/agones.git <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> agones <span class="kw">&amp;&amp;</span> <span class="fu">git</span> checkout release-0.9.0-rc</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> minikube profile agones</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span>   minikube profile was successfully set to agones</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> minikube start <span class="at">--kubernetes-version</span> v1.11.0 <span class="at">--vm-driver</span> virtualbox <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">--extra-config</span><span class="op">=</span>apiserver.authorization-mode=RBAC</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ex">o</span>   minikube v0.35.0 on darwin <span class="er">(</span><span class="ex">amd64</span><span class="kw">)</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;</span>   Creating <span class="ex">virtualbox</span> VM <span class="er">(</span><span class="va">CPUs</span><span class="op">=</span>2, <span class="va">Memory</span><span class="op">=</span>2048MB, <span class="va">Disk</span><span class="op">=</span>20000MB<span class="kw">)</span> <span class="ex">...</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span>   <span class="st">&quot;agones&quot;</span> IP address is 192.168.99.102</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span>   Configuring Docker as the container runtime ...</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span>   Preparing Kubernetes environment ...</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="ex">-</span> apiserver.authorization-mode=RBAC</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span>   Pulling images required by Kubernetes v1.11.0 ...</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span>   Launching Kubernetes v1.11.0 using kubeadm ...</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="bu">:</span>   Waiting for pods: apiserver proxy etcd scheduler controller addon-manager dns</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span>   Configuring cluster permissions ...</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="ex">-</span>   Verifying component health .....</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="ex">+</span>   kubectl is now configured to use <span class="st">&quot;agones&quot;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="ex">=</span>   Done! Thank you for using minikube!</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl create clusterrolebinding cluster-admin-binding <span class="dt">\</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">--clusterrole</span><span class="op">=</span>cluster-admin <span class="at">--serviceaccount</span><span class="op">=</span>kube-system:default</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="ex">clusterrolebinding.rbac.authorization.k8s.io</span> <span class="st">&quot;cluster-admin-binding&quot;</span> created</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl create namespace agones-system</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="ex">namespace</span> <span class="st">&quot;agones-system&quot;</span> created</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl apply <span class="at">-f</span> install/yaml/install.yaml</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="ex">serviceaccount</span> <span class="st">&quot;agones-controller&quot;</span> created</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="ex">clusterrole.rbac.authorization.k8s.io</span> <span class="st">&quot;agones-controller&quot;</span> created</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="ex">clusterrolebinding.rbac.authorization.k8s.io</span> <span class="st">&quot;agones-controller-access&quot;</span> created</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="ex">serviceaccount</span> <span class="st">&quot;agones-sdk&quot;</span> created</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="ex">clusterrole.rbac.authorization.k8s.io</span> <span class="st">&quot;agones-sdk&quot;</span> created</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="ex">rolebinding.rbac.authorization.k8s.io</span> <span class="st">&quot;agones-sdk-access&quot;</span> created</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="ex">customresourcedefinition.apiextensions.k8s.io</span> <span class="st">&quot;fleets.stable.agones.dev&quot;</span> created</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="ex">customresourcedefinition.apiextensions.k8s.io</span> <span class="st">&quot;fleetallocations.stable.agones.dev&quot;</span> created</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="ex">customresourcedefinition.apiextensions.k8s.io</span> <span class="st">&quot;fleetautoscalers.stable.agones.dev&quot;</span> created</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="ex">customresourcedefinition.apiextensions.k8s.io</span> <span class="st">&quot;gameservers.stable.agones.dev&quot;</span> created</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="ex">customresourcedefinition.apiextensions.k8s.io</span> <span class="st">&quot;gameserverallocations.stable.agones.dev&quot;</span> created</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="ex">customresourcedefinition.apiextensions.k8s.io</span> <span class="st">&quot;gameserversets.stable.agones.dev&quot;</span> created</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> <span class="st">&quot;agones-controller-service&quot;</span> created</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="ex">deployment.apps</span> <span class="st">&quot;agones-controller&quot;</span> created</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="ex">deployment.apps</span> <span class="st">&quot;agones-ping&quot;</span> created</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> <span class="st">&quot;agones-ping-http-service&quot;</span> created</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="ex">service</span> <span class="st">&quot;agones-ping-udp-service&quot;</span> created</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="ex">priorityclass.scheduling.k8s.io</span> <span class="st">&quot;agones-system&quot;</span> created</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="ex">validatingwebhookconfiguration.admissionregistration.k8s.io</span> <span class="st">&quot;agones-validation-webhook&quot;</span> created</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="ex">mutatingwebhookconfiguration.admissionregistration.k8s.io</span> <span class="st">&quot;agones-mutation-webhook&quot;</span> created</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="ex">secret</span> <span class="st">&quot;agones-manual-cert&quot;</span> created</span></code></pre></div>
+<h2 id="simple-udpサンプルの動作確認">simple-udpサンプルの動作確認</h2>
+<p>Agonesをインストールしたら、<a
+href="https://agones.dev/site/docs/getting-started/create-gameserver/">Quickstart</a>
+を参考に動作確認をする。
+が、ドキュメントでは先述の「Agonesというサービスを手元で動作確認したい」というケースを前提としているため、自分のように手元の
+<code>install/yaml/install.yaml</code> でAgonesをインストールした場合は
+<code>kubectl create -f</code> に作業ツリーの
+<code>gameserver.yml</code> を指定するように注意する。</p>
+<p>誤って異なるソースのinstall.ymlとgameserver.ymlを用いた場合、Agones内の設定ファイルのフォーマットやプロトコルに差異が出て、不可解なエラーになることがある。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> eval <span class="va">$(</span><span class="ex">minikube</span> docker-env<span class="va">)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl create <span class="at">-f</span> examples/simple-udp/gameserver.yaml</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">gameserver.stable.agones.dev</span> <span class="st">&quot;simple-udp-fkhqj&quot;</span> created</span></code></pre></div>
+<p>simple-udpサンプルの動作確認では最終的に <code>nc</code>
+コマンドでUDPパケットを送って、ACKが返ってくることを確認する。<br />
+公式ドキュメントでは <code>kubectl get gs</code>
+で接続アドレスとポートが表示されるはずなのだが、自分の環境では表示されなかった。</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl get gs</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">NAME</span>               AGE</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">simple-udp-fkhqj</span>   1h</span></code></pre></div>
+<p>接続アドレスとポートを調べるのに、<code>kubectl get</code>
+でピンポイントで探そうとして、結構な時間ハマってしまった。<br />
+愚直に <code>kubectl describe all</code> の中を探せば見つかる。</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl describe all</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">Name:</span>           simple-udp-fkhqj</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">Namespace:</span>      default</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">Node:</span>           minikube/10.0.2.15</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">Start</span> Time:     Sat, 30 Mar 2019 23:04:20 +0900</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ex">Labels:</span>         stable.agones.dev/gameserver=simple-udp-fkhqj</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                <span class="ex">stable.agones.dev/role=gameserver</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ex">Annotations:</span>    cluster-autoscaler.kubernetes.io/safe-to-evict=false</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                <span class="ex">stable.agones.dev/container=simple-udp</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>                <span class="ex">stable.agones.dev/sdk-version=0.9.0-rc</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="ex">Status:</span>         Running</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="ex">IP:</span>             172.17.0.7</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="ex">Controlled</span> By:  GameServer/simple-udp-fkhqj</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="ex">Containers:</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="ex">simple-udp:</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="ex">Container</span> ID:   docker://a20277e8c04cb92e5b3885824f9d6b98b36488312e92ed5bf664cb4bd3653917</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="ex">Image:</span>          gcr.io/agones-images/udp-server:0.7</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="ex">Image</span> ID:       docker-pullable://gcr.io/agones-images/udp-server@sha256:324f398fcee52edd0dee847496b350f3717e69536a1d70ae6a22b6fd8aab8bf0</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="ex">Port:</span>           7654/UDP</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="ex">Host</span> Port:      7383/UDP     <span class="op">&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span> ここ</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="ex">...</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>  <span class="ex">agones-gameserver-sidecar:</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="ex">...</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="ex">Conditions:</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Type</span>              Status</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Initialized</span>       True </span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Ready</span>             True </span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>  <span class="ex">ContainersReady</span>   True </span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>  <span class="ex">PodScheduled</span>      True </span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="ex">Volumes:</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>  <span class="ex">...</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="ex">Events:</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Type</span>    Reason     Age   From               Message</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>  <span class="ex">----</span>    <span class="at">------</span>     <span class="at">----</span>  <span class="at">----</span>               <span class="at">-------</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>  Scheduled  39m   default-scheduler  Successfully assigned default/simple-udp-fkhqj to minikube</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>  Pulling    39m   kubelet, minikube  pulling image <span class="st">&quot;gcr.io/agones-images/udp-server:0.7&quot;</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>  Pulled     39m   kubelet, minikube  Successfully pulled image <span class="st">&quot;gcr.io/agones-images/udp-server:0.7&quot;</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>  Created    39m   kubelet, minikube  Created container</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>  Started    39m   kubelet, minikube  Started container</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>  Pulled     39m   kubelet, minikube  Container image <span class="st">&quot;gcr.io/agones-images/agones-sdk:0.9.0-rc&quot;</span> already present on machine</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>  Created    39m   kubelet, minikube  Created container</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>  Started    39m   kubelet, minikube  Started container</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a><span class="ex">Name:</span>              kubernetes</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a><span class="ex">Namespace:</span>         default</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a><span class="ex">Labels:</span>            component=apiserver</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>                   <span class="va">provider</span><span class="op">=</span>kubernetes</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a><span class="ex">Annotations:</span>       <span class="op">&lt;</span>none<span class="op">&gt;</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a><span class="ex">Selector:</span>          <span class="op">&lt;</span>none<span class="op">&gt;</span></span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a><span class="ex">Type:</span>              ClusterIP</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a><span class="ex">IP:</span>                10.96.0.1</span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a><span class="ex">Port:</span>              https  443/TCP</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a><span class="ex">TargetPort:</span>        8443/TCP</span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a><span class="ex">Endpoints:</span>         192.168.99.102:8443         <span class="op">&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span> ここ</span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a><span class="ex">Session</span> Affinity:  None</span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a><span class="ex">Events:</span>            <span class="op">&lt;</span>none<span class="op">&gt;</span></span></code></pre></div>
+<p>上で「ここ」と示した <code>Endpoints</code> のIP部と
+<code>Host Port</code> のポートを使用する。</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> nc <span class="at">-u</span> 192.168.99.102 7383</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">hello</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ACK:</span> hello</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="bu">test</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ex">ACK:</span> test</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="ex">GAMESERVER</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="ex">NAME:</span> simple-udp-fkhqj</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="ex">EXIT</span></span></code></pre></div>
+<p>ゲームサーバ側のログを見ながらだと、挙動がわかりやすい。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl logs simple-udp-fkhqj <span class="at">-c</span> simple-udp <span class="at">-f</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">2019/03/30</span> 14:04:25 Starting UDP server, listening on port 7654</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">2019/03/30</span> 14:04:25 Creating SDK instance</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ex">2019/03/30</span> 14:04:25 Starting Health Ping</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ex">2019/03/30</span> 14:04:25 Marking this server as ready</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ex">2019/03/30</span> 14:40:06 Received packet from 192.168.99.1:49977: hello</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="ex">2019/03/30</span> 14:40:49 Received packet from 192.168.99.1:49977: test</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="ex">2019/03/30</span> 14:41:32 Received packet from 192.168.99.1:49977: GAMESERVER</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="ex">2019/03/30</span> 14:41:32 GameServer: {<span class="st">&quot;object_meta&quot;</span>:<span class="dt">{</span><span class="st">&quot;name&quot;</span><span class="dt">:</span><span class="st">&quot;simple-udp-fkhqj&quot;</span><span class="op">,</span><span class="st">&quot;namespace&quot;</span><span class="dt">:</span><span class="st">&quot;default&quot;</span><span class="op">,</span><span class="st">&quot;uid&quot;</span><span class="dt">:</span><span class="st">&quot;b70af2f8-52f4-11e9-adb9-080027031e5a&quot;</span><span class="op">,</span><span class="st">&quot;resource_version&quot;</span><span class="dt">:</span><span class="st">&quot;4697&quot;</span><span class="op">,</span><span class="st">&quot;generation&quot;</span><span class="dt">:1</span><span class="op">,</span><span class="st">&quot;creation_timestamp&quot;</span><span class="dt">:1553954660</span><span class="op">,</span><span class="st">&quot;annotations&quot;</span><span class="dt">:{</span><span class="st">&quot;stable.agones.dev/sdk-version&quot;</span><span class="dt">:</span><span class="st">&quot;0.9.0-rc&quot;</span><span class="dt">}</span><span class="op">,</span><span class="st">&quot;labels&quot;</span><span class="dt">:{</span><span class="st">&quot;stable.agones.dev/sdk-timestamp&quot;</span><span class="dt">:</span><span class="st">&quot;1553956874&quot;</span><span class="dt">}}</span>,<span class="st">&quot;spec&quot;</span>:{<span class="st">&quot;health&quot;</span>:<span class="dt">{</span><span class="st">&quot;PeriodSeconds&quot;</span><span class="dt">:5</span><span class="op">,</span><span class="st">&quot;FailureThreshold&quot;</span><span class="dt">:3</span><span class="op">,</span><span class="st">&quot;InitialDelaySeconds&quot;</span><span class="dt">:5}</span>},<span class="st">&quot;status&quot;</span>:<span class="dt">{</span><span class="st">&quot;state&quot;</span><span class="dt">:</span><span class="st">&quot;Ready&quot;</span><span class="op">,</span><span class="st">&quot;address&quot;</span><span class="dt">:</span><span class="st">&quot;10.0.2.15&quot;</span><span class="op">,</span><span class="st">&quot;ports&quot;</span><span class="dt">:[{</span><span class="st">&quot;name&quot;</span><span class="dt">:</span><span class="st">&quot;default&quot;</span><span class="op">,</span><span class="st">&quot;port&quot;</span><span class="dt">:7383}]}</span>}</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="ex">2019/03/30</span> 15:31:17 Received packet from 192.168.99.1:49977: EXIT</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="ex">2019/03/30</span> 15:31:17 Received EXIT command. Exiting.</span></code></pre></div>
+<h2 id="まとめ">まとめ</h2>
+<ul>
+<li>Agonesの動作確認は、自分が何をしたいかによって適切なインストール方法を選ぶ必要がある
+<ul>
+<li>Agonesが何者かを手っ取り早くしりたいのであれば、ドキュメントどおりでOK</li>
+<li>SDK周りのサンプルまで確認したい場合は、リリースブランチを使う</li>
+</ul></li>
+<li>自分のようなk8s弱者は、ゲームサーバ動作確認用の接続先アドレスとポートを
+<code>kubectl describe all</code> から探す
+<ul>
+<li>もっといい方法があるとは思うが、自分にはまだ圧倒的にk8s力が足りない。</li>
+</ul></li>
+</ul>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

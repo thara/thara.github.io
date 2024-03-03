@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Rustのクロージャ内で外側のスコープのimmutableな変数をmutableな変数に同名で束縛したいときにつかうマクロ - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Rustのクロージャ内で外側のスコープのimmutableな変数をmutableな変数に同名で束縛したいときにつかうマクロ - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Rustのクロージャ内で外側のスコープのimmutableな変数をmutableな変数に同名で束縛したいときにつかうマクロ - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Rustのクロージャ内で外側のスコープのimmutableな変数をmutableな変数に同名で束縛したいときにつかうマクロ</h1>
+    <ul>
+      <li>published: <time>2019-04-30</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>クロージャ内で外側のスコープの変数をmutableな変数に同名で束縛したいときに、外側の変数の不変に保つために、
+以下のようなマクロを使っている。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode rust"><code class="sourceCode rust"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">macro_rules!</span> enclose <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    ( (<span class="op">$</span>( <span class="op">$</span>x<span class="op">:</span>ident )<span class="op">,*</span>) <span class="op">$</span>y<span class="op">:</span>expr ) <span class="op">=&gt;</span> <span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>            <span class="op">$</span>(<span class="kw">let</span> <span class="kw">mut</span> <span class="op">$</span>x <span class="op">=</span> <span class="op">$</span>x<span class="op">.</span>clone()<span class="op">;</span>)<span class="op">*</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>            <span class="op">$</span>y</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>以下のような感じで書ける。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode rust"><code class="sourceCode rust"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> sdk <span class="op">=</span> <span class="pp">agones::Sdk::</span>new()<span class="op">.</span>map_err(<span class="op">|</span>_<span class="op">|</span> <span class="st">&quot;Could not connect to the sidecar. Exiting!&quot;</span>)<span class="op">?;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> _health <span class="op">=</span> <span class="pp">thread::</span>spawn(<span class="pp">enclose!</span> <span class="op">{</span>(sdk) <span class="kw">move</span> <span class="op">||</span> <span class="op">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">loop</span> <span class="op">{</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">match</span> sdk<span class="op">.</span>health() <span class="op">{</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>            (s<span class="op">,</span> <span class="cn">Ok</span>(_)) <span class="op">=&gt;</span> <span class="op">{</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                <span class="pp">println!</span>(<span class="st">&quot;Health ping sent&quot;</span>)<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                sdk <span class="op">=</span> s<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>            <span class="op">},</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>            (s<span class="op">,</span> <span class="cn">Err</span>(e)) <span class="op">=&gt;</span> <span class="op">{</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>                <span class="pp">println!</span>(<span class="st">&quot;Health ping failed : {:?}&quot;</span><span class="op">,</span> e)<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>                sdk <span class="op">=</span> s<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        <span class="pp">thread::</span>sleep(<span class="pp">Duration::</span>from_secs(<span class="dv">2</span>))<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="op">}}</span>)<span class="op">;</span></span></code></pre></div>
+<p><code>thread::spawn</code>
+に渡しているクロージャ内では、sdk変数を特定の条件で再束縛しているため、sdk変数はmutableである必要がある。<br />
+マクロなしでmutableなsdk変数を作ろうとcloneしてしまうと、シャドウイングによって外側のスコープのimmutableなsdk変数を後続の処理で使うことができなくなってしまう。</p>
+<p>上記の <code>enclose</code>
+マクロは、このシャドウイングを防止する。健全なマクロバンザイ。</p>
+<p>なお、自分はマクロ素人 &amp;
+ちょっと前のバージョンでこのマクロを使ったので、Rust2018ではもっといい方法があるかもしれない。
+あしからず。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

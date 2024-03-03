@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>UITableViewControllerでPull-to-Refresh
+Xcode10版 - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="UITableViewControllerでPull-to-Refresh
+Xcode10版 - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="UITableViewControllerでPull-to-Refresh
+Xcode10版 - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>UITableViewControllerでPull-to-Refresh Xcode10版</h1>
+    <ul>
+      <li>published: <time>2018-10-22</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>少しググったらわかるけど微妙にバージョン違いが多かったのでメモ。<br />
+XCode
+10というのはただ確認したのがこのバージョンだっただけで、厳密には違うかもしれない。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MyViewController<span class="op">:</span> <span class="dt">UITableViewController</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">override</span> <span class="kw">func</span> <span class="fu">viewDidLoad</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        refreshControl <span class="op">=</span> UIRefreshControl<span class="op">()</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        refreshControl<span class="op">?.</span>addTarget<span class="op">(</span><span class="kw">self</span><span class="op">,</span> action<span class="op">:</span> #selector<span class="op">(</span>refresh<span class="op">(</span>sender<span class="op">:)),</span> <span class="cf">for</span><span class="op">:</span> <span class="op">.</span>valueChanged<span class="op">)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">@objc</span> <span class="kw">func</span> <span class="fu">refresh</span><span class="op">(</span><span class="va">sender</span><span class="op">:</span> <span class="dt">UIRefreshControl</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">// 更新処理</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        sender<span class="op">.</span>endRefreshing<span class="op">()</span>  <span class="co">// アクティビティインジケータを消す</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<h2 id="参考">参考</h2>
+<ul>
+<li><a
+href="https://developer.apple.com/documentation/uikit/uitableviewcontroller">UITableViewController
+- UIKit / Apple Developer Documentation</a></li>
+<li><a
+href="https://developer.apple.com/documentation/uikit/uirefreshcontrol">UIRefreshControl
+- UIKit / Apple Developer Documentation</a></li>
+</ul>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>

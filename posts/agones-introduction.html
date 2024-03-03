@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>ゲームサーバー管理サービス Agones - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="ゲームサーバー管理サービス
+Agones - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="ゲームサーバー管理サービス
+Agones - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>ゲームサーバー管理サービス Agones</h1>
+    <ul>
+      <li>published: <time>2018-06-26</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>Google と Ubisoft が協働で開発している <a
+href="https://github.com/GoogleCloudPlatform/agones">Agones</a> が
+2018/3/14 に公開された。</p>
+<ul>
+<li><a
+href="https://jp.techcrunch.com/2018/03/14/2018-03-13-google-partners-with-ubisoft-to-launch-agones-an-open-source-game-server-hosting-system/">GoogleがUbisoftと協働でオープンソースのゲームサーバーホスティングシステムAgonesをローンチ</a></li>
+<li><a
+href="https://cloudplatform-jp.googleblog.com/2018/04/introducing-Agones-open-source-multiplayer-dedicated-game-server-hosting-built-on-Kubernetes.html">Agones
+―― Kubernetes 上でのゲーム サーバー構築をサポートするオープンソース
+プロジェクトが始動</a></li>
+</ul>
+<p>ゲームサーバーやオンラインゲーム業界に携わったことがない人から見ると、どのような問題を解決するのかわかりにくいかもしれない。</p>
+<p>自分もまだしっかり触ったわけでもプロダクションに導入したわけでもないが、現在の理解の範囲内で簡単に説明すると、
+Agones は Kubernetes(以下k8s)
+上のアプリケーションのホスティング/スケーリング管理を行うサービス。</p>
+<p>アプリケーション開発者は、SDK を組み込んだ Docker image
+と設定ファイルを作成し、 それを用いて Agones が管理する k8s
+にデプロイすることで、簡単にスケールアウト可能なクラスタを構成することができる。</p>
+<p>ステートフルなゲームサーバーを運用しているサービスであれば何らかの方法でこのようなゲームサーバー管理サービスを構築していると思われるが、
+Agones の大きな利点として、k8s 上に構築されているため minikube
+を用いてローカル環境でも簡単にゲームサーバーを稼働させることができる点が挙げられる。</p>
+<p>minikube を用いれば macOS
+上でも動作させられるはずなので、実際に試してみた。</p>
+<h2 id="agones-サンプルを-macos-上で試す">Agones サンプルを macOS
+上で試す</h2>
+<p><a
+href="https://github.com/GoogleCloudPlatform/agones/blob/291825b6f837982adb2b0198110a4e74cf9d5f09/docs/create_gameserver.md">公式のQuickStart</a>
+の焼き直しになるが、 以下のような手順で macOS 上で Agones
+の動作確認ができる。</p>
+<h3 id="事前準備">事前準備</h3>
+<p>事前準備として、Docker for Mac および minikube のインストールが必要。
+minikube のインストールは、バージョン管理のため、<a
+href="https://github.com/asdf-vm/asdf">asdf</a>
+経由で行うことをおすすめする。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> brew install asdf</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> asdf plugin-add minikube</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> asdf global minikube 0.25.2</span></code></pre></div>
+<h3 id="agones-の取得">Agones の取得</h3>
+<p>2018/6/26 現在の GitHub 上の Agones
+リポジトリには、SDKやサンプルなどがすべて含まれている。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> git clone https://github.com/GoogleCloudPlatform/agones.git</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> cd agones</span></code></pre></div>
+<h3 id="k8s-準備">k8s 準備</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> minikube profile agones</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> minikube start <span class="at">--kubernetes-version</span> v1.9.4 <span class="at">--vm-driver</span> virtualbox <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--extra-config</span><span class="op">=</span>apiserver.Admission.PluginNames=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--extra-config</span><span class="op">=</span>apiserver.Authorization.Mode=RBAC</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl create clusterrolebinding cluster-admin-binding <span class="dt">\</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--clusterrole</span><span class="op">=</span>cluster-admin <span class="at">--serviceaccount</span><span class="op">=</span>kube-system:default</span></code></pre></div>
+<h3 id="agones-インストール">Agones インストール</h3>
+<p>以下を実行することで、 k8s クラスタ上に Agones
+がインストールされる。</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl apply <span class="at">-f</span> https://github.com/GoogleCloudPlatform/agones/raw/release-0.2.0/install/yaml/install.yaml</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl describe <span class="at">--namespace</span> agones-system pods  <span class="co"># 確認</span></span></code></pre></div>
+<h3 id="agones-サンプルの実行">Agones サンプルの実行</h3>
+<p><code>eval $(minikube docker-env) </code>
+を忘れてドハマリしたので注意。</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> eval <span class="va">$(</span><span class="ex">minikube</span> docker-env<span class="va">)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl create <span class="at">-f</span> examples/cpp-simple/gameserver.yaml</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ex">gameserver.stable.agones.dev</span> <span class="st">&quot;cpp-simple-s776l&quot;</span> created</span></code></pre></div>
+<p>各アプリケーションの標準出力は、<code>kubectl logs</code>
+で確認できる。</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl get pods</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">NAME</span>                     READY     STATUS    RESTARTS   AGE</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">cpp-simple-s776l-j5894</span>   2/2       Running   0          42s</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl logs cpp-simple-s776l-j5894 <span class="at">-c</span> cpp-simple</span></code></pre></div>
+<p>また、 <code>kubectl describe pods</code> で、Agones
+が出力するメッセージを確認できる。</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> kubectl describe pods</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">Events:</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Type</span>     Reason                 Age                From               Message</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="ex">----</span>     <span class="at">------</span>                 <span class="at">----</span>               <span class="at">----</span>               <span class="at">-------</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>   Scheduled              1m                 default-scheduler  Successfully assigned cpp-simple-s776l-j5894 to agones</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>   SuccessfulMountVolume  1m                 kubelet, agones    MountVolume.SetUp succeeded for volume <span class="st">&quot;agones-sdk-token-bzhdp&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>   Pulling                1m                 kubelet, agones    pulling image <span class="st">&quot;gcr.io/agones-images/cpp-simple-server:0.1&quot;</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>   Pulled                 1m                 kubelet, agones    Successfully pulled image <span class="st">&quot;gcr.io/agones-images/cpp-simple-server:0.1&quot;</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>   Created                1m                 kubelet, agones    Created container</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="ex">Normal</span>   Started                1m                 kubelet, agones    Started container</span></code></pre></div>
+<h2 id="まとめ">まとめ</h2>
+<p>Agones の簡単な紹介と、macOS + minikube
+でのサンプルの実行を試した。</p>
+<p>個人的には、今までクローズドであったステートフルなゲームサーバーの実装が
+Agones 上に再構築されることでオープンソースとなり、
+より洗練された設計/実装になったり、オンラインゲーム開発の障壁の低減につながることを期待したい。
+また、k8s 上に構築可能なサービスとして良い例
+だと思うので、ゲーム業界以外でも何かの参考になるかもしれない。</p>
+<p>ちなみに、Agones にはすでに <a
+href="https://github.com/GoogleCloudPlatform/agones/pull/230">Rust SDK
+のサポート追加という形でコントリビュートした</a> 。</p>
+<p>またの機会にSDKの追加方法や、ローカルでのゲームサーバー動作確認方法を解説する予定。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">Home</a>
+    | <a href="https://github.com/thara/thara.github.io">GitHub</a>
+    | <a href="https://thara.dev/about.html">About</a>
+    | &copy; 2024 Tomochika Hara
+  </small></footer>
+</body>
+</html>
