@@ -1,3 +1,7 @@
+body {
+  line-height: 2;
+}
+
 /* for gist embed */
 table.highlight tr {
   border-top: 1px solid var(--dark);
