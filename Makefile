@@ -60,3 +60,10 @@ serve: all
 .PHONY: debug
 debug:
 	@echo $(HTML_FILES)
+
+.PHONE: add_post
+add_post:
+	@echo "Title: "
+	@read title; \
+	date=$(shell date +%Y-%m-%d); \
+	echo "---\ntitle: $$title\ndate: '$$date'\npublished: '$$date'\n---" > posts/$$date-$$title.md
