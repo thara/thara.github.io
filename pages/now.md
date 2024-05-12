@@ -32,6 +32,7 @@ title: What I'm doing now
 
 - Rustは好きな方の言語だが、Cの何でもできる感とシンプルさが好みになってきた
     - Zigは思ったほどシンプルじゃない気がしてきた
+    - [C3](https://c3-lang.org/) はどうだろう...?
 - [koka](https://koka-lang.github.io/koka/doc/index.html)はだいぶ好み
     - こういうリサーチ用の言語が実用として発展していくかは不透明
 - OCaml 5.0でEffect Handlerが入ったらしいので、OCamlに再入門中
