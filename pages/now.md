@@ -31,14 +31,14 @@ title: What I'm doing now
 最近はシステムプログラミングとエフェクトシステムへの興味が強くなってきた。
 
 - Rustは好きな方の言語だが、Cの何でもできる感とシンプルさが好みになってきた
-    - Zigは思ったほどシンプルじゃない気がしてきた
-    - [C3](https://c3-lang.org/) はどうだろう...?
+    - Goは仕事用
+- でも、探索的プログラミングが好きなので、そういう時はやっぱRubyだな、という気持ち
 - [koka](https://koka-lang.github.io/koka/doc/index.html)はだいぶ好み
     - こういうリサーチ用の言語が実用として発展していくかは不透明
 - OCaml 5.0でEffect Handlerが入ったらしいので、OCamlに再入門中
 
 ---
 
-Last update: 2024-05-12
+Last update: 2024-05-18
 
 This is [now page](https://nownownow.com/about).
