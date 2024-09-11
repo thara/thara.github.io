@@ -18,3 +18,4 @@ Software Engineer, Geek and Dad of twins in Aichi, Japan.
 - [Posts](./posts.html)
 - [About](./about.html)
 - [Resume](./resume-ja.html)
+- [Digital Garden](./garden)
