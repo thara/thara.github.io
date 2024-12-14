@@ -8,7 +8,7 @@ Tomochika Hara
 - GitHub: [thara](https://github.com/thara)
 - Blog: [Tomochika Hara's Blog](https://blog.thara.jp)
 - X: [@zetta1985](https://x.com/zetta1985)
-- Twitch: [tharadev](https://twitch.tv/tharadev)
+- Bluesky: [@thara.jp](https://bsky.app/profile/thara.jp)
 - LinkedIn: [Tomochika Hara](https://www.linkedin.com/in/tomochikahara/)
 
 ## 概要
