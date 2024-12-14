@@ -29,10 +29,33 @@ Tomochika Hara
 
 ## スキル詳細
 
-- プログラミング言語: Go ★★★, Python ★★, Ruby ★★, JavaScript/TypeScript ★★, Kotlin ★★, Swift ★★, C++ ★★, C# ★★, Rust ★
-- フレームワーク・ライブラリ: Goa ★★, Django ★★, Ruby on Rails ★★, React ★, Vue.js ★, RxSwift ★, UniRx ★
-- インフラ・ツール: AWS ★★★, GCP ★★, nginx ★★, MySQL ★★, Redis ★★, Docker ★★, Terraform ★★, CircleCI ★★, GitHub Actions ★★
-- プロトコル・フォーマット: RESTful ★★★, Protocol Buffers ★★★, gRPC ★★★, MQTT ★★, glTF ★, VRM ★
+- ★☆☆☆☆: 小規模タスクで使用可能
+- ★★☆☆☆: 実務での使用経験あり、基本的な課題を解決可能
+- ★★★☆☆: 実務で継続的な使用経験あり、標準的なタスクを安定して遂行可能
+- ★★★★☆: 実務で主力として使用、 複雑な課題を自立して解決可能
+- ★★★★★: 深い専門性を持ち、設計・実装からチームへの指導や最適化が可能
+
+### プログラミング言語
+- **★★★★★:** Go
+- **★★★★☆:** Python, Ruby, JavaScript/TypeScript  
+- **★★☆☆☆:** Kotlin, Swift, C++, C#, Scala
+- **★☆☆☆☆:** Rust
+
+### フレームワーク・ライブラリ
+- **★★★★☆:** Goa, Django
+- **★★★☆☆:** Ruby on Rails
+- **★★☆☆☆:** React, Vue.js  
+- **★☆☆☆☆:** RxSwift, UniRx  
+
+### インフラ・ツール
+- **★★★★☆:** MySQL, Redis, Gradle, CircleCI, GitHub Actions  
+- **★★★☆☆:** AWS, GCP, nginx, Docker, Terraform, Jenkins
+- **★★☆☆☆:** Photon Engine, Apache Airflow
+
+### プロトコル・フォーマット
+- **★★★★★:** RESTful, Protocol Buffers, gRPC  
+- **★★★☆☆:** MQTT  
+- **★☆☆☆☆:** glTF, VRM  
 
 ## 経歴
 
@@ -69,7 +92,7 @@ Tomochika Hara
 ### 株式会社Misoca (2018-07 〜 2020-06) サーバーサイドエンジニア/プロダクトマネージャ(Android/iOS)
 
 - 役割: サーバーサイドエンジニア, プロダクトマネージャ(Android/iOS)
-- 利用技術: Ruby, Ruby on Rails, AWS, Android, Kotlin, Swift, RxSwift
+- 利用技術: Ruby, Ruby on Rails, AWS, Kotlin, Swift, RxSwift
 
 請求書作成サービスMisocaのモバイルアプリのバックエンドAPIの開発, Android/iOS向けのプロダクトマネージメントおよびライブラリ開発に従事。
 
