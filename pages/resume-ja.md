@@ -29,15 +29,10 @@ Tomochika Hara
 
 ## スキル詳細
 
-- プログラミング言語
-    - Go, Swift, Rust, Python, C/C++, Ruby, Java, Kotlin, Scala, JavaScript/TypeScript, C#
-- インフラストラクチャ
-    - Amazon Web Services, Google Cloud Platfrom
-    - nginx, MySQL, Redis
-    - Jenkins, Docker, Circle CI, GitHub Actions
-- フレームワークその他
-    - Django, Ruby on Rails, Spring framework
-    - RESTful, Protocol Buffers, gRPC
+- プログラミング言語: Go ★★★, Python ★★, Ruby ★★, JavaScript/TypeScript ★★, Kotlin ★★, Swift ★★, C++ ★★, C# ★★, Rust ★
+- フレームワーク・ライブラリ: Goa ★★, Django ★★, Ruby on Rails ★★, React ★, Vue.js ★, RxSwift ★, UniRx ★
+- インフラ・ツール: AWS ★★★, GCP ★★, nginx ★★, MySQL ★★, Redis ★★, Docker ★★, Terraform ★★, CircleCI ★★, GitHub Actions ★★
+- プロトコル・フォーマット: RESTful ★★★, Protocol Buffers ★★★, gRPC ★★★, MQTT ★★, glTF ★, VRM ★
 
 ## 経歴
 
@@ -65,6 +60,7 @@ Tomochika Hara
 - モノリスアプリケーションをマイクロサービスに分割するプロジェクトを主導した。
     - [無停止で機能開発を継続した、clusterのシステム分割事例 - Cluster Tech Blog](https://tech-blog.cluster.mu/entry/2023/12/26)
 - 開発チームの設計/テクニカルライティングスキルの向上を目的に委員会を立ち上げ、design docのテンプレート改善やガイドラインの策定を行なった。
+- プラットフォーム運用向けWebアプリケーションのフレームワーク設計/実装を行なった。
 
 ### 弥生株式会社 (2020-07 〜 2020-08)
 
@@ -120,8 +116,10 @@ Tomochika Hara
 ## 個人プロジェクト
 
 - [SwiftNES](https://github.com/thara/SwiftNES): Swift製のクロスプラットフォーム向けNESエミュレータ
-- [erajp](https://github.com/thara/erajp): Rust製 日本の元号変換ライブラリ
+- [gorones](https://github.com/thara/gorones): Go製のクロスプラットフォーム向けNESエミュレータ
 - [rust_aliasmethod](https://github.com/thara/rust_aliasmethod): Walker's Alias MethodのRust実装
+- [erajp](https://github.com/thara/erajp): Rust製 日本の元号変換ライブラリ
+- [SoundIO](https://github.com/thara/SoundIO): クロスプラットフォーム向け音声入出力ライブラリlibsoundioのSwiftバインディング
 
 ## その他の活動
 
@@ -129,6 +127,7 @@ Tomochika Hara
 - [SpriteKitではじめる2Dゲームプログラミング Swift対応](http://www.shoeisha.co.jp/book/detail/9784798139517) の執筆
   - 第2章 Swiftの基本, 第8章リバーシを作ろう--AIの作り方 を担当
 - [iOSDC Japan 2019: Swiftでつくるファミコンエミュレータのススメ](https://fortee.jp/iosdc-japan-2019/proposal/92904657-beda-46fe-8ecb-b27c75ee0f16) (LT発表)
+- [Go Conference 2022 Spring | メタバースを支える技術 ～UGCに溢れる3D空間のリアルタイム同期を支えるGo〜](https://gocon.jp/2022spring/sessions/a6-c/) (スポンサーセッション登壇)
 
 ## 資格
 
