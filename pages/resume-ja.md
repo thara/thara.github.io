@@ -59,7 +59,7 @@ Tomochika Hara
 
 ## 経歴
 
-### クラスター株式会社 (2020-09 〜 現在)
+### クラスター株式会社 (2020-09 〜 2025-02)
 
 - 役割: シニアソフトウェアエンジニア、ソフトウェアアーキテクト(サーバーサイド)
 - 利用技術: Go, AWS, MySQL, Redis, Protocol Buffers, gRPC, MQTT, Docker, GitHub Actions, Circle CI, Gradle, Unity, C#, glTF, VRM
