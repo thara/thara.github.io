@@ -8,13 +8,7 @@ title: What I'm doing now
 
 ## 仕事
 
-[クラスター株式会社](https://corp.cluster.mu/)
-
-名刺には シニアソフトウェアエンジニア と書いてある。
-ソフトウェアアーキテクト(サーバーサイド)という肩書きの下、design docを書いてることが多い。
-
-プロダクトへの機能追加の他、プラットフォーム側や共通ライブラリの設計/実装も担う。
-ふんわりしている取り組みを具体的な取り組みに落とし込む、みたいなのを任されることが多い。
+[さくらインターネット](https://www.sakura.ad.jp/)
 
 ## 家族
 
@@ -24,18 +18,9 @@ title: What I'm doing now
 
 ## プログラミング
 
-仕事はGoがメイン。
-
-使いやすくて割と好みな方ではあるが、Go 1.22で `for i := range 10` みたいに書けるようになったのはシンプルさが失われるな、と感じた
-[Go 1.22 Release Notes - The Go Programming Language](https://tip.golang.org/doc/go1.22#language)
-
 - システムプログラミング、WebAssemblyへの興味が強くなってきた。
 - Rustは好きな方の言語だが、Cの何でもできる感とシンプルさは好み。
 - 探索的プログラミングが好きなので、そういう時はやっぱRubyだな、という気持ち
-- Dartは趣味でFlutterのために触るが、言語自体も割と好き
-    - Dartが出てきた2011年ぐらいに触っていて、勉強会も少しだけ開催していた
-        - https://connpass.com/event/2689/
-        - https://connpass.com/event/3362/
 - [koka](http://localhost:8000/now.html) のような、型推論が強力 & エフェクトシステムをネイティブで使える言語が流行ってほしい
 - 空間情報技術(?)が気になる
     - 地理空間、AR/VR、3D、地図、位置情報、GPS、測量、GIS、リモートセンシング、etc...
@@ -52,7 +37,7 @@ Linuxデスクトップは昔使っていたが継続しなかった。
 ## デバイス
 
 - スマートフォン: iPhone 15 Pro
-    - 次はAndroidでいいかな、って思ってる
+    - 次はAndroidでもいいかな
 - スマートウォッチ: Garmin Instinct 2X Dual Power Tactical Edition
     - Apple Watchから乗り換えた
     - Tactical Editionである必要は全くない
@@ -69,6 +54,6 @@ Linuxデスクトップは昔使っていたが継続しなかった。
 
 ---
 
-Last update: 2024-10-27
+Last update: 2025-05-03
 
 This is [now page](https://nownownow.com/about).
