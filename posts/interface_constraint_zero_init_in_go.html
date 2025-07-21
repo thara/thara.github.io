@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Go ジェネリクスでインターフェース制約を満たしつつ zero
+valueで初期化する - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Go
+ジェネリクスでインターフェース制約を満たしつつ zero
+valueで初期化する - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Go
+ジェネリクスでインターフェース制約を満たしつつ zero
+valueで初期化する - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Go ジェネリクスでインターフェース制約を満たしつつ zero
+valueで初期化する</h1>
+    <ul>
+      <li>published: <time>2025-07-21</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>例えば、proto.Message
+を型制約に持つgenericな関数を書こうとすると、次のような落とし穴がある：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> DecodeProtoMessage<span class="op">[</span>T proto<span class="op">.</span>Message<span class="op">](</span>data <span class="op">[]</span><span class="dt">byte</span><span class="op">)</span> <span class="op">(*</span>T<span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">...</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> m T</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> proto<span class="op">.</span>Unmarshal<span class="op">(</span>b<span class="op">,</span> m<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">...</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">&amp;</span>m<span class="op">,</span> <span class="ot">nil</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>このとき、<code>T</code> に <code>*Pet</code>
+のようなポインタ型を指定すると、<code>var m T</code> は
+nilのままとなり、<code>proto.Unmarshal</code> はpanicしてしまう。 Go
+のジェネリクスでは、ポインタ型に対するゼロ値の <code>new(T)</code> や
+<code>var m T</code> は nilなので、non-nil前提の処理ではこうなる。</p>
+<h2 id="解決策値型-t-とポインタ型-t-を分離して制約する">解決策：値型 T
+とポインタ型 *T を分離して制約する</h2>
+<p>そこで、以下のように値型 <code>T</code> に対するポインタ型
+<code>*T</code> に制約をかけることで、安全な初期化ができる：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> ProtoMessagePtr<span class="op">[</span>T any<span class="op">]</span> <span class="kw">interface</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>T</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    proto<span class="op">.</span>Message</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> DecodeProtoMessage3<span class="op">[</span>T any<span class="op">,</span> P ProtoMessagePtr<span class="op">[</span>T<span class="op">]](</span>data <span class="op">[]</span><span class="dt">byte</span><span class="op">)</span> <span class="op">(*</span>T<span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">...</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> m T</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> p P <span class="op">=</span> <span class="op">&amp;</span>m</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> proto<span class="op">.</span>Unmarshal<span class="op">(</span>b<span class="op">,</span> p<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>        <span class="op">...</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">&amp;</span>m<span class="op">,</span> <span class="ot">nil</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><code>T</code> が <code>any</code> にもかかわらず、 <code>P</code>
+の型制約によって<code>*T</code>が <code>proto.Message</code>
+を満たすことを関数定義が要求していることがポイント。
+この方法は、<code>proto.Message</code>
+に限らず、任意のinterfaceに応用できる。</p>
+<p>使用例:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>    dst<span class="op">,</span> err <span class="op">:=</span> DecodeProtoMessage<span class="op">[</span>petstorev1<span class="op">.</span>Pet<span class="op">](</span>encodedData<span class="op">)</span></span></code></pre></div>
+<p>このように <code>P</code>
+は第1型パラメータによって自明なので、関数を利用する際には
+<code>ProtoMessagePtr</code> を指定する必要もない。
+reflectionやfactoryなどを使わずに、型安全にzero
+valueを生成できていい感じ。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2025 Tomochika Hara
+  </small></footer>
+</body>
+</html>
