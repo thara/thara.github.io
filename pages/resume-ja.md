@@ -59,6 +59,13 @@ Tomochika Hara
 
 ## 経歴
 
+### さくらインターネット (2025-05 〜 現職)
+
+- 役割: ソフトウェアエンジニア、テックリード
+- 利用技術: Go, PostgreSQL, Redis, Protocol Buffers, gRPC, Docker, Ansible, Terraform, GitHub Actions
+
+ガバメントクラウドの技術要件を満たすためのサービス開発に従事。
+
 ### クラスター株式会社 (2020-09 〜 2025-02)
 
 - 役割: シニアソフトウェアエンジニア、ソフトウェアアーキテクト(サーバーサイド)
