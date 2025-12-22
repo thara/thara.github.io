@@ -5,7 +5,9 @@ published: '2025-12-23'
 ---
 
 この記事は [さくらインターネット Advent Calendar 2025](https://qiita.com/advent-calendar/2025/sakura) 23日目の記事です。   
-22日目は[kiyokiyo](https://x.com/kiyokiyo)さんの [Containerlabを使ってネットワーク機器のCIを考えてみた](https://qiita.com/kiyokiyo/items/47b779d5601921a4dead) と [SONiCのsystemdを読みながら好きなツールを動かしてみる](https://qiita.com/kiyokiyo/items/3e80799ff9e430282a4b) でした。2つともネットワークエンジニアにとって非常に興味深い内容でしたね。自分には全然わかりませんが、ネットワーク領域にもCI/CD、可観測、IaCの波が来ているのだなと感じました。
+
+22日目は[kiyokiyo](https://x.com/kiyokiyo)さんの [Containerlabを使ってネットワーク機器のCIを考えてみた](https://qiita.com/kiyokiyo/items/47b779d5601921a4dead) と [SONiCのsystemdを読みながら好きなツールを動かしてみる](https://qiita.com/kiyokiyo/items/3e80799ff9e430282a4b) でした。   
+2つともネットワークエンジニアにとって非常に興味深い内容でしたね。自分には全然わかりませんが、ネットワーク領域にもCI/CD、可観測、IaCの波が来ているのだなと感じました。
 
 ------------
 
