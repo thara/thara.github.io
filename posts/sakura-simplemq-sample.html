@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>さくらのクラウドの「シンプルMQ」で始めるイベント駆動アプリケーション - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="さくらのクラウドの「シンプルMQ」で始めるイベント駆動アプリケーション - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="さくらのクラウドの「シンプルMQ」で始めるイベント駆動アプリケーション - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>さくらのクラウドの「シンプルMQ」で始めるイベント駆動アプリケーション</h1>
+    <ul>
+      <li>published: <time>2025-12-23</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>この記事は <a
+href="https://qiita.com/advent-calendar/2025/sakura">さくらインターネット
+Advent Calendar 2025</a> 23日目の記事です。<br />
+22日目は<a href="https://x.com/kiyokiyo">kiyokiyo</a>さんの <a
+href="https://qiita.com/kiyokiyo/items/47b779d5601921a4dead">Containerlabを使ってネットワーク機器のCIを考えてみた</a>
+と <a
+href="https://qiita.com/kiyokiyo/items/3e80799ff9e430282a4b">SONiCのsystemdを読みながら好きなツールを動かしてみる</a>
+でした。2つともネットワークエンジニアにとって非常に興味深い内容でしたね。自分には全然わかりませんが、ネットワーク領域にもCI/CD、可観測、IaCの波が来ているのだなと感じました。</p>
+<hr />
+<p><a
+href="https://manual.sakura.ad.jp/cloud/appliance/simplemq/index.html">さくらのクラウド
+シンプルMQ</a>は、マネージドなメッセージキューサービスです。この記事では、シンプルMQを使ったProducer-Consumerパターンの実装例を紹介します。</p>
+<p>特に以下の点に焦点を当てます：</p>
+<ul>
+<li><strong>Protocol Buffers +
+Deflate圧縮</strong>によるメッセージの効率的な取り扱い</li>
+<li><strong>Terraform</strong>によるインフラのコード化</li>
+<li>実践的な実装パターンと運用のポイント</li>
+</ul>
+<h3
+id="サンプルアプリケーションの全体像">サンプルアプリケーションの全体像</h3>
+<p><img src="../../images/simplemq-sample.png"
+alt="sample application overview" /></p>
+<ul>
+<li><strong>Producer CLI</strong>:
+コマンドラインから1メッセージを送信</li>
+<li><strong>Producer API Server</strong>: HTTP
+APIでメッセージを受け付け、シンプルMQに転送</li>
+<li><strong>Consumer Worker</strong>:
+シンプルMQをポーリングしてメッセージを処理</li>
+</ul>
+<h2 id="入門編基本的な使い方">【入門編】基本的な使い方</h2>
+<p>まずはシンプルMQの基本的な使い方を体験してみましょう。</p>
+<h3 id="リポジトリのクローン">リポジトリのクローン</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/thara/sakura-simplemq-sample.git</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> sakura-simplemq-sample</span></code></pre></div>
+<h3 id="terraformでシンプルmqを構築">TerraformでシンプルMQを構築</h3>
+<p>Infrastructure as
+Codeの実践として、TerraformでシンプルMQのキューを作成します。</p>
+<p>まず、さくらのクラウドのAPIキーのアクセストークンとアクセストークンシークレットを環境変数に設定します：</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">SAKURACLOUD_ACCESS_TOKEN</span><span class="op">=</span><span class="st">&quot;your-access-token&quot;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">SAKURACLOUD_ACCESS_TOKEN_SECRET</span><span class="op">=</span><span class="st">&quot;your-access-token-secret&quot;</span></span></code></pre></div>
+<p>次にTerraformでキューを作成：</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> terraform</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">terraform</span> init</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">terraform</span> apply</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ..</span></code></pre></div>
+<p><code>terraform/main.tf</code>では、以下のようにシンプルMQリソースを定義しています：</p>
+<pre class="hcl"><code>resource &quot;sakura_simple_mq&quot; &quot;playground&quot; {
+  name = &quot;playground-mq&quot;
+  description = &quot;This is a playground message queue.&quot;
+  tags = [&quot;playground&quot;]
+
+  visibility_timeout_seconds = 10  # メッセージの可視性タイムアウト（秒）
+  expire_seconds             = 100 # メッセージの有効期限（秒）
+}</code></pre>
+<p>作成後、さくらのクラウドのコントロールパネルからシンプルMQのキューのAPIキーをローテートし、環境変数に設定します：</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">SIMPLEMQ_API_KEY</span><span class="op">=</span><span class="st">&quot;your-simplemq-api-key&quot;</span></span></code></pre></div>
+<p>2025年12月現在terraform apply時にAPIキーを設定 or
+取得する方法は提供されていないため、<strong>キューを作成後に一度APIキーをローテートする必要がある</strong>
+ことに注意してください。</p>
+<h2 id="動かしてみる">動かしてみる</h2>
+<p>それでは、3つのコンポーネントを実際に動かしてみましょう。</p>
+<p><strong>Consumer Workerを起動（別ターミナル）:</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run cmd/consumer-worker/main.go <span class="at">-queue</span><span class="op">=</span>playground-mq</span></code></pre></div>
+<p>このWorkerは1秒ごとにシンプルMQをポーリングし、メッセージを処理します。</p>
+<p><strong>Producer CLIでメッセージを送信:</strong></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run cmd/producer/main.go <span class="at">-queue</span><span class="op">=</span>playground-mq <span class="at">-message</span><span class="op">=</span><span class="st">&quot;Hello from CLI!&quot;</span></span></code></pre></div>
+<p>Consumer側のターミナルに以下のようなログが表示されるはずです：</p>
+<pre><code>yyyy/MM/dd HH:mm:ss INFO messages received count=1
+yyyy/MM/dd HH:mm:ss INFO message received id=&lt;message-id&gt;
+yyyy/MM/dd HH:mm:ss INFO message deleted id=&lt;message-id&gt;
+yyyy/MM/dd HH:mm:ss INFO notification received message=&quot;Hello from CLI!&quot;</code></pre>
+<p><strong>Producer API Serverでの送信（別ターミナル）:</strong></p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># サーバーを起動</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run cmd/producer-api-server/main.go <span class="at">-addr</span><span class="op">=</span>:8080 <span class="at">-queue</span><span class="op">=</span>playground-mq</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 別ターミナルからHTTP POSTで送信</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST http://localhost:8080 <span class="at">-d</span> <span class="st">&quot;Hello from API Server!&quot;</span></span></code></pre></div>
+<p>同様にConsumer側でメッセージが受信されます。これで非同期メッセージングの基本的な流れを体験できました。</p>
+<h2 id="実践編本番運用に向けた工夫">【実践編】本番運用に向けた工夫</h2>
+<p>ここからは、本番運用を想定した実装の工夫について解説します。基本的な使い方を理解した方向けの内容です。</p>
+<h3
+id="シンプルmqの特性と設計への影響">シンプルMQの特性と設計への影響</h3>
+<p><a
+href="https://manual.sakura.ad.jp/cloud/appliance/simplemq/index.html">シンプルMQ</a>には以下の特性があり、これらを理解した上で設計する必要があります：</p>
+<p><strong>Pull型 - Consumer側がポーリングする</strong></p>
+<p>Consumer側が能動的にメッセージを取得します。今回のサンプルでは1秒ごとのポーリングを実装しています。</p>
+<p><strong>順序は保証されない</strong></p>
+<p>受信時刻の古いメッセージから配信されますが、<a
+href="https://manual.sakura.ad.jp/cloud/appliance/simplemq/index.html#:~:text=%E3%82%82%E5%8F%AF%E8%83%BD%E3%81%A7%E3%81%99%E3%80%82-,%E2%80%BB%E5%BE%8C%E8%BF%B0%E3%81%AE%E5%8F%AF%E8%A6%96%E6%80%A7%E3%82%BF%E3%82%A4%E3%83%A0%E3%82%A2%E3%82%A6%E3%83%88%E5%BB%B6%E9%95%B7%E3%81%AA%E3%81%A9%E3%81%AB%E3%82%88%E3%82%8A%E3%80%81%E6%96%B0%E3%81%97%E3%81%84%E3%83%A1%E3%83%83%E3%82%BB%E3%83%BC%E3%82%B8%E3%81%8C%E5%85%88%E3%81%AB%E9%85%8D%E4%BF%A1%E3%81%95%E3%82%8C%E3%82%8B%E5%A0%B4%E5%90%88%E3%82%82%E3%81%82%E3%82%8A%E3%81%BE%E3%81%99%E3%80%82,-%E4%BB%95%E6%A7%98%EF%83%81">可視性タイムアウト延長などにより順序が入れ替わる</a>場合があります。順序が重要な処理では、アプリケーション側で制御してください。</p>
+<p><strong>重複配信を前提に冪等性を確保</strong></p>
+<p><a
+href="https://manual.sakura.ad.jp/cloud/appliance/simplemq/index.html#:~:text=%E9%85%8D%E4%BF%A1%E3%81%95%E3%82%8C%E3%82%8B%E3%80%82-,%E5%90%84%E3%83%A1%E3%83%83%E3%82%BB%E3%83%BC%E3%82%B8%E3%81%AF%E5%B0%91%E3%81%AA%E3%81%8F%E3%81%A8%E3%82%821%E5%9B%9E%E3%81%AE%E9%85%8D%E4%BF%A1%E3%81%8C%E4%BF%9D%E8%A8%BC%E3%81%95%E3%82%8C%E3%82%8B,-%E3%80%82">各メッセージは少なくとも1回の配信が保証</a>されますが、2回以上配信される可能性があります。Consumer側で冪等性を確保する必要があります。</p>
+<p>冪等性の実装例：</p>
+<ul>
+<li>メッセージIDをDBに記録し、処理済みなら何もしない</li>
+<li>処理済みフラグを外部ストア（Redis等）に置く</li>
+<li>副作用を冪等なAPI（PUT、べき等な更新）に寄せる</li>
+</ul>
+<p><strong>可視性タイムアウトは再配信の原因になる</strong></p>
+<p>メッセージを受信してから他のConsumerに見えなくなる時間（可視性タイムアウト）があります。処理時間より短いと、処理中のメッセージが再配信されます。Terraformでの
+<code>visibility_timeout_seconds</code>
+設定時は、想定される処理時間より長めに設定してください。</p>
+<h3 id="メッセージの効率的な取り扱い">メッセージの効率的な取り扱い</h3>
+<p>このサンプルアプリケーションでは、メッセージの効率性と信頼性を高めるために、<strong>Protocol
+Buffers</strong>と<strong>Deflate圧縮</strong>を組み合わせています。</p>
+<h4 id="なぜprotocol-buffersなのか">なぜProtocol Buffersなのか</h4>
+<p><a href="https://protobuf.dev/">Protocol
+Buffers（protobuf）</a>は、Googleが開発したシリアライズフォーマットです。JSONと比較して以下の利点があります：</p>
+<ol type="1">
+<li><strong>スキーマ定義</strong>:
+<code>.proto</code>ファイルでメッセージ構造を明確に定義</li>
+<li><strong>型安全性</strong>: コンパイル時に型チェックが行われる</li>
+<li><strong>バイナリフォーマット</strong>: JSONよりコンパクトで高速</li>
+</ol>
+<p>今回のサンプルでは、シンプルなNotificationメッセージを定義しています：</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode protobuf"><code class="sourceCode protobuf"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>edition = <span class="st">&quot;2023&quot;</span>;</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">option</span> go_package = <span class="st">&quot;github.com/thara/sakura-simplemq-sample/samplepb&quot;</span>;</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="kw">message</span> Notification {</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">string</span> <span class="kw">message</span> = <span class="dv">1</span>;</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>このシンプルな例でも、将来的にフィールドを追加する際に後方互換性を保ちやすいという利点があります。</p>
+<p><strong>なぜここまでやるのか</strong></p>
+<p>この設計は「キューを長期利用する」前提です。メッセージは将来、他言語・他サービスからも利用される可能性があるため、以下の点を重視しています：</p>
+<ul>
+<li><strong>スキーマの安定性</strong>:
+<code>.proto</code>ファイルで明確に定義され、サービス間で共有できる</li>
+<li><strong>後方互換性</strong>:
+フィールド追加時も既存のConsumerが動き続ける</li>
+<li><strong>サイズ制限耐性</strong>:
+シンプルMQの256000文字制限に対して余裕を持たせる</li>
+</ul>
+<p><strong>適用の判断基準</strong></p>
+<ul>
+<li>メッセージサイズが数十〜数百byte中心なら、圧縮の効果は限定的</li>
+<li>他言語対応・長期運用を想定するなら Protocol Buffers が有効</li>
+<li>デバッグ容易性を優先するなら JSON も選択肢に入る</li>
+</ul>
+<h4 id="deflate圧縮--base64エンコーディング">Deflate圧縮 +
+Base64エンコーディング</h4>
+<p>さらに、メッセージサイズを削減するためにDeflate圧縮を適用し、Base64エンコーディングでテキスト化してからシンプルMQに送信しています。Go標準ライブラリの<code>compress/flate</code>だけで完結させるためDeflateを採用していますが、gzipでも同様に実装できます。</p>
+<p>エンコード処理の流れ（<code>internal/encoding.go</code>）：</p>
+<pre><code>Notification (protobuf)
+  → Marshal (バイナリ化)
+  → Deflate圧縮
+  → Base64エンコード
+  → シンプルMQに送信するメッセージ（文字列）</code></pre>
+<p>実装を見てみましょう（<code>internal/encoding.go</code>）：</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> encodeProtoMessage<span class="op">(</span>msg proto<span class="op">.</span>Message<span class="op">)</span> <span class="op">(</span><span class="dt">string</span><span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 1. Protocol Buffersでバイナリ化</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    b<span class="op">,</span> err <span class="op">:=</span> proto<span class="op">.</span>Marshal<span class="op">(</span>msg<span class="op">)</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">&quot;&quot;</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to marshal proto message: %w&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 2. Deflate圧縮</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    compressed<span class="op">,</span> err <span class="op">:=</span> compress<span class="op">(</span>b<span class="op">)</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">&quot;&quot;</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to compress proto message: %w&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 3. Base64エンコード</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> base64<span class="op">.</span>StdEncoding<span class="op">.</span>EncodeToString<span class="op">(</span>compressed<span class="op">),</span> <span class="ot">nil</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>デコード側は逆の順序で処理を行います：</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> decodeProtoMessage<span class="op">(</span>src <span class="dt">string</span><span class="op">,</span> msg proto<span class="op">.</span>Message<span class="op">)</span> <span class="dt">error</span> <span class="op">{</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 1. Base64デコード</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    data<span class="op">,</span> err <span class="op">:=</span> base64<span class="op">.</span>StdEncoding<span class="op">.</span>DecodeString<span class="op">(</span>src<span class="op">)</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to decode base64 string: %w&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 2. Deflate解凍</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    decompressed<span class="op">,</span> err <span class="op">:=</span> decompress<span class="op">(</span>data<span class="op">)</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to decompress proto message: %w&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 3. Protocol Buffersでデシリアライズ</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> proto<span class="op">.</span>Unmarshal<span class="op">(</span>decompressed<span class="op">,</span> msg<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to unmarshal proto message: %w&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ot">nil</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h4 id="圧縮の効果">圧縮の効果</h4>
+<p>この方式により、以下のようなメリットが得られます：</p>
+<ul>
+<li><strong>メッセージサイズ制限への対応</strong>:
+シンプルMQには1メッセージ<a
+href="https://manual.sakura.ad.jp/api/cloud/simplemq/#operation/sendMessage">256000文字以内</a>という制限があります。圧縮により、より多くのデータを送信できます</li>
+<li><strong>転送サイズの削減</strong>:
+特に繰り返しの多いデータで圧縮効果が高い</li>
+<li><strong>ネットワーク効率</strong>: 帯域幅の節約</li>
+</ul>
+<p>ただし、メッセージが数十バイト程度の場合、圧縮によって逆にサイズが増えることもあります。ユースケースに応じて判断してください。</p>
+<h3
+id="producer-consumerパターンの実装">Producer-Consumerパターンの実装</h3>
+<h4 id="producer実装のポイント">Producer実装のポイント</h4>
+<p>ProducerとConsumerは共通の<code>internal</code>パッケージを使用することで、エンコード/デコード処理の一貫性を保っています。</p>
+<p><strong>CLI
+Producer</strong>（<code>cmd/producer/main.go</code>）:</p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>notification <span class="op">:=</span> <span class="op">&amp;</span>samplepb<span class="op">.</span>Notification<span class="op">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    Message<span class="op">:</span> proto<span class="op">.</span>String<span class="op">(</span>message<span class="op">),</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> err <span class="op">:=</span> internal<span class="op">.</span>SendNotification<span class="op">(</span>ctx<span class="op">,</span> messageOp<span class="op">,</span> notification<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to send notification: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><strong>API Server
+Producer</strong>（<code>cmd/producer-api-server/main.go</code>）:</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>handler <span class="op">:=</span> http<span class="op">.</span>HandlerFunc<span class="op">(</span><span class="kw">func</span><span class="op">(</span>w http<span class="op">.</span>ResponseWriter<span class="op">,</span> r <span class="op">*</span>http<span class="op">.</span>Request<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    body<span class="op">,</span> err <span class="op">:=</span> io<span class="op">.</span>ReadAll<span class="op">(</span>r<span class="op">.</span>Body<span class="op">)</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>        http<span class="op">.</span>Error<span class="op">(</span>w<span class="op">,</span> <span class="st">&quot;failed to read request body&quot;</span><span class="op">,</span> http<span class="op">.</span>StatusBadRequest<span class="op">)</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    notification <span class="op">:=</span> <span class="op">&amp;</span>samplepb<span class="op">.</span>Notification<span class="op">{</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>        Message<span class="op">:</span> proto<span class="op">.</span>String<span class="op">(</span><span class="dt">string</span><span class="op">(</span>body<span class="op">)),</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> internal<span class="op">.</span>SendNotification<span class="op">(</span>r<span class="op">.</span>Context<span class="op">(),</span> messageOp<span class="op">,</span> notification<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>        http<span class="op">.</span>Error<span class="op">(</span>w<span class="op">,</span> fmt<span class="op">.</span>Sprintf<span class="op">(</span><span class="st">&quot;failed to send notification: %w&quot;</span><span class="op">,</span> err<span class="op">),</span> http<span class="op">.</span>StatusInternalServerError<span class="op">)</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="op">})</span></span></code></pre></div>
+<p>どちらも<code>internal.SendNotification</code>関数を呼び出すだけで、エンコード処理は内部で行われます：</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> SendNotification<span class="op">(</span>ctx context<span class="op">.</span>Context<span class="op">,</span> messageOp simplemq<span class="op">.</span>MessageAPI<span class="op">,</span> notification <span class="op">*</span>samplepb<span class="op">.</span>Notification<span class="op">)</span> <span class="dt">error</span> <span class="op">{</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    content<span class="op">,</span> err <span class="op">:=</span> encodeProtoMessage<span class="op">(</span>notification<span class="op">)</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to encode message: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    resSend<span class="op">,</span> err <span class="op">:=</span> messageOp<span class="op">.</span>Send<span class="op">(</span>ctx<span class="op">,</span> content<span class="op">)</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to send message: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    slog<span class="op">.</span>Info<span class="op">(</span><span class="st">&quot;Message Sent&quot;</span><span class="op">,</span> slog<span class="op">.</span>String<span class="op">(</span><span class="st">&quot;ID&quot;</span><span class="op">,</span> <span class="dt">string</span><span class="op">(</span>resSend<span class="op">.</span>ID<span class="op">)))</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ot">nil</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h4 id="consumer実装のポイント">Consumer実装のポイント</h4>
+<p>Consumer
+Worker（<code>cmd/consumer-worker/main.go</code>）は、1秒ごとにシンプルMQをポーリングします：</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>ticker <span class="op">:=</span> time<span class="op">.</span>NewTicker<span class="op">(</span><span class="dv">1</span> <span class="op">*</span> time<span class="op">.</span>Second<span class="op">)</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="cf">defer</span> ticker<span class="op">.</span>Stop<span class="op">()</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> <span class="op">{</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">select</span> <span class="op">{</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> <span class="op">&lt;-</span>ctx<span class="op">.</span>Done<span class="op">():</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> ctx<span class="op">.</span>Err<span class="op">()</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> <span class="op">&lt;-</span>ticker<span class="op">.</span>C<span class="op">:</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> err <span class="op">:=</span> receiveMessages<span class="op">(</span>ctx<span class="op">,</span> client<span class="op">,</span> queueName<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>            slog<span class="op">.</span>ErrorContext<span class="op">(</span>ctx<span class="op">,</span> <span class="st">&quot;failed to receive messages&quot;</span><span class="op">,</span> slog<span class="op">.</span>Any<span class="op">(</span><span class="st">&quot;error&quot;</span><span class="op">,</span> err<span class="op">))</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>メッセージ受信処理では、<code>internal.ReceiveNotifications</code>を使用してデコードと削除（acknowledge）を行います：</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> ReceiveNotifications<span class="op">(</span>ctx context<span class="op">.</span>Context<span class="op">,</span> messageOp simplemq<span class="op">.</span>MessageAPI<span class="op">)</span> <span class="op">([]*</span>samplepb<span class="op">.</span>Notification<span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 1. シンプルMQからメッセージを受信</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    messages<span class="op">,</span> err <span class="op">:=</span> messageOp<span class="op">.</span>Receive<span class="op">(</span>ctx<span class="op">)</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to receive messages: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    slog<span class="op">.</span>Info<span class="op">(</span><span class="st">&quot;messages received&quot;</span><span class="op">,</span> slog<span class="op">.</span>Int<span class="op">(</span><span class="st">&quot;count&quot;</span><span class="op">,</span> <span class="bu">len</span><span class="op">(</span>messages<span class="op">)))</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> notifications <span class="op">[]*</span>samplepb<span class="op">.</span>Notification</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 2. 各メッセージを処理</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _<span class="op">,</span> msg <span class="op">:=</span> <span class="kw">range</span> messages <span class="op">{</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> err <span class="op">:=</span> <span class="kw">func</span><span class="op">()</span> <span class="dt">error</span> <span class="op">{</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>            <span class="co">// 2-1. デコード</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>            <span class="kw">var</span> notification samplepb<span class="op">.</span>Notification</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> err <span class="op">:=</span> decodeProtoMessage<span class="op">(</span><span class="dt">string</span><span class="op">(</span>msg<span class="op">.</span>Content<span class="op">),</span> <span class="op">&amp;</span>notification<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to decode message ID %s: %v&quot;</span><span class="op">,</span> msg<span class="op">.</span>ID<span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>            slog<span class="op">.</span>Info<span class="op">(</span><span class="st">&quot;message received&quot;</span><span class="op">,</span> slog<span class="op">.</span>String<span class="op">(</span><span class="st">&quot;id&quot;</span><span class="op">,</span> <span class="dt">string</span><span class="op">(</span>msg<span class="op">.</span>ID<span class="op">)),</span> slog<span class="op">.</span>String<span class="op">(</span><span class="st">&quot;content&quot;</span><span class="op">,</span> notification<span class="op">.</span>GetMessage<span class="op">()))</span></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>            notifications <span class="op">=</span> <span class="bu">append</span><span class="op">(</span>notifications<span class="op">,</span> <span class="op">&amp;</span>notification<span class="op">)</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>            <span class="co">// 2-2. メッセージを削除してacknowledge</span></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> err <span class="op">:=</span> messageOp<span class="op">.</span>Delete<span class="op">(</span>ctx<span class="op">,</span> <span class="dt">string</span><span class="op">(</span>msg<span class="op">.</span>ID<span class="op">));</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to delete message ID %s: %v&quot;</span><span class="op">,</span> msg<span class="op">.</span>ID<span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>            slog<span class="op">.</span>Info<span class="op">(</span><span class="st">&quot;message deleted&quot;</span><span class="op">,</span> slog<span class="op">.</span>String<span class="op">(</span><span class="st">&quot;id&quot;</span><span class="op">,</span> <span class="dt">string</span><span class="op">(</span>msg<span class="op">.</span>ID<span class="op">)))</span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> <span class="ot">nil</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>        <span class="op">}();</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>            slog<span class="op">.</span>Error<span class="op">(</span><span class="st">&quot;failed to process message&quot;</span><span class="op">,</span> slog<span class="op">.</span>String<span class="op">(</span><span class="st">&quot;id&quot;</span><span class="op">,</span> <span class="dt">string</span><span class="op">(</span>msg<span class="op">.</span>ID<span class="op">)),</span> slog<span class="op">.</span>Any<span class="op">(</span><span class="st">&quot;error&quot;</span><span class="op">,</span> err<span class="op">))</span></span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> notifications<span class="op">,</span> <span class="ot">nil</span></span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3
+id="実践的なユースケースと運用tips">実践的なユースケースと運用Tips</h3>
+<h4 id="よくあるユースケース">よくあるユースケース</h4>
+<ul>
+<li><strong>バックグラウンド処理</strong>:
+画像処理、メール送信、レポート生成など</li>
+<li><strong>マイクロサービス連携</strong>:
+サービス間の非同期イベント通知</li>
+<li><strong>データパイプライン</strong>:
+ログ収集・加工・格納の各ステージを疎結合に接続</li>
+</ul>
+<h4 id="運用上の考慮事項">運用上の考慮事項</h4>
+<p><strong>メッセージ設定の調整</strong></p>
+<p>Terraformで定義した以下のパラメータは、用途に応じて調整が必要です：</p>
+<ul>
+<li><code>visibility_timeout_seconds</code>:
+メッセージを受信してから他のConsumerに見えなくなる時間。処理時間より長く設定する</li>
+<li><code>expire_seconds</code>:
+メッセージの有効期限。処理されなかったメッセージが自動削除されるまでの時間</li>
+</ul>
+<p><strong>複数Consumerによるスケーリング</strong></p>
+<p>処理量が増えた場合、Consumer
+Workerを複数起動することで並列処理が可能です：</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ターミナル1</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run cmd/consumer-worker/main.go <span class="at">-queue</span><span class="op">=</span>playground-mq</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co"># ターミナル2</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run cmd/consumer-worker/main.go <span class="at">-queue</span><span class="op">=</span>playground-mq</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co"># ターミナル3（さらに追加）</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run cmd/consumer-worker/main.go <span class="at">-queue</span><span class="op">=</span>playground-mq</span></code></pre></div>
+<p>それぞれのWorkerが異なるメッセージを処理するため、処理能力が向上します。</p>
+<p><strong>エラーハンドリングとリトライ</strong></p>
+<p>このサンプル実装には、本番運用で危険な点があります。デコード失敗などの恒久的に成功しない処理が発生した場合、そのメッセージは削除されないため、可視性タイムアウトが切れると再配信され続けます。
+このようなメッセージを<a
+href="https://en.wikipedia.org/wiki/Poison_message">Poison
+message</a>と呼びます。</p>
+<p>本番環境ではこのPoison
+messageに対して以下のような対策を講じることを推奨します：</p>
+<ul>
+<li>リトライ回数の保持（メッセージ属性にカウンタを持たせる）</li>
+<li>一定回数失敗したメッセージの削除、またはエラーログへの記録</li>
+<li>アラート通知（異常なエラー率の検知）</li>
+</ul>
+<p><strong>モニタリング</strong></p>
+<p>以下の指標を監視することで、システムの健全性を把握できます：</p>
+<ul>
+<li>キュー内のメッセージ数（滞留していないか）</li>
+<li>メッセージの処理時間</li>
+<li>エラー率</li>
+<li>Consumer数とその稼働状況</li>
+</ul>
+<h2 id="まとめ">まとめ</h2>
+<p>この記事では、さくらのクラウドの「シンプルMQ」を使ったProducer-Consumerパターンの実装例を紹介しました。Protocol
+Buffers +
+Deflate圧縮により、型安全性とメッセージサイズの削減を両立しながら、将来的な拡張性も確保できます。</p>
+<h3 id="次のステップ">次のステップ</h3>
+<p>このサンプルをベースに、以下のような拡張も考えられます：</p>
+<ul>
+<li><strong>複雑なメッセージ</strong>: Protocol
+Buffersのスキーマを拡張し、より多くの情報を含める</li>
+<li><strong>エラーハンドリングの強化</strong>:
+アプリケーション側でのリトライやPoison message対策の実装</li>
+<li><strong>モニタリング</strong>: <a
+href="https://manual.sakura.ad.jp/cloud/appliance/monitoring-suite/index.html">モニタリングスイート</a>を使ってキューの状態やメッセージ処理状況を可視化</li>
+</ul>
+<p>サンプルコードは<a
+href="https://github.com/thara/sakura-simplemq-sample">GitHub</a>で公開していますので、ぜひ試してみてください。</p>
+<p>さくらのクラウド
+シンプルMQを活用して、スケーラブルで堅牢なイベント駆動アプリケーションを構築しましょう！</p>
+<hr />
+<p>明日は<a
+href="https://github.com/linyows">@linyows</a>さんの「Stalwartについて書く」です。またしても何もわからないのですが、このようにさくらインターネットでは様々な技術分野で活躍されている方が多いので、とても勉強になりますね。
+ぜひ他の記事もチェックしてみてください！</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2025 Tomochika Hara
+  </small></footer>
+</body>
+</html>
