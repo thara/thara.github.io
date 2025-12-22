@@ -444,5 +444,6 @@ go run cmd/consumer-worker/main.go -queue=playground-mq
 
 ---
 
-明日は[@linyows](https://github.com/linyows)さんの「Stalwartについて書く」です。またしても何もわからないのですが、このようにさくらインターネットでは様々な技術分野で活躍されている方が多いので、とても勉強になりますね。
+明日は[@linyows](https://github.com/linyows)さんの「Stalwartについて書く」です。   
+またしても何もわからないのですが、このようにさくらインターネットでは様々な技術分野で活躍されている方が多いので、とても勉強になりますね。   
 ぜひ他の記事もチェックしてみてください！
