@@ -13,25 +13,27 @@ YEAR=$(shell date +%Y)
 
 PANDOC_OPT=-t html -f gfm+yaml_metadata_block -V base_url=$(BASE_URL) -V year=$(YEAR) --data-dir=$(DATA_DIR)
 
-MD_FILES=$(shell find ./$(SRC) -type f \
+MD_FILES := $(shell find ./$(SRC) -type f \
 				 	| sed 's/^\.\/$(SRC)/$(DST)/g' \
 				 	| sed "s/posts\/20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]-/posts\//")
-HTML_FILES=$(MD_FILES:.md=.html)
+HTML_FILES := $(MD_FILES:.md=.html)
 
-POST_MD_FILES=$(shell find ./posts -type f \
-				 	| sed 's/^\.\/posts/$(DST)\/posts/g' \
-				 	| sed "s/20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]-//")
-POST_HTML_FILES=$(POST_MD_FILES:.md=.html)
+POSTS_SRC := $(shell find posts -type f -name '20??-??-??-*.md')
+post_slug = $(shell basename '$(1)' .md | sed -E 's/^20[0-9]{2}-[0-1][0-9]-[0-3][0-9]-//')
 
-all: $(HTML_FILES) $(POST_HTML_FILES)
+POST_HTML_FILES := $(foreach f,$(POSTS_SRC),$(DST)/posts/$(call post_slug,$(f)).html)
 
-$(DST)/posts/%.html: posts/20??-??-??-%.md
-	@mkdir -p $(dir $@)
-	@pandoc -s $< -o $@ $(PANDOC_OPT) --template=post.html
-	@page_dir=`echo $@ | sed "s/\.html//"`; \
-	mkdir -p $$page_dir ;\
-	url=`echo $@ | sed "s/^$(DST)//"`; \
-	pandoc -s $< -o $$page_dir/index.html $(PANDOC_OPT) --metadata url=$$url --template=redirect.html
+test_post_slug:
+	@echo $(call post_slug,posts/2024-06-15-my-first-post.md)
+
+all: $(POST_HTML_FILES) $(HTML_FILES)
+
+define POST_RULE
+$(DST)/posts/$(call post_slug,$(1)).html: $(1)
+	./build_post.sh "$$<" "$$@" "$(DST)" "$(PANDOC_OPT)"
+endef
+
+$(foreach f,$(POSTS_SRC),$(eval $(call POST_RULE,$(f))))
 
 $(DST)/posts.html: $(SRC)/posts.md
 	@mkdir -p $(TMP_DIR)
@@ -41,7 +43,7 @@ $(DST)/posts.html: $(SRC)/posts.md
 		pandoc -s $$f --template=list-item-link.md --metadata url=$$url --data-dir=$(DATA_DIR) >> $(TMP_DIR)/posts.md; \
 	done
 	@mkdir -p $(dir $@)
-	@pandoc -s $(TMP_DIR)/posts.md -o $@ $(PANDOC_OPT) --template=base
+	pandoc -s $(TMP_DIR)/posts.md -o $@ $(PANDOC_OPT) --template=base
 
 $(DST)/%.html: $(SRC)/%.md
 	@mkdir -p $(dir $@)
