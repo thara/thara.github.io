@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>ATProtocol Quick start guideをやった - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="ATProtocol Quick start
+guideをやった - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="ATProtocol Quick start
+guideをやった - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>ATProtocol Quick start guideをやった</h1>
+    <ul>
+      <li>published: <time>2026-01-04</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>最近、Xの代わりに <a href="https://bsky.app/">Bluesky</a>
+を使ってるのだけれど、あんまりBlueskyを支えるAT
+Protocolについて知らなかったので、<a
+href="https://atproto.com/guides/applications">AT Protocol Quick start
+guide</a>をやってみた。</p>
+<p><a
+href="https://github.com/bluesky-social/statusphere-example-app">bluesky-social/statusphere-example-app</a>
+のサンプルアプリを動かす感じ。</p>
+<p>ATProtocol全然関係ないんだけど、このサンプルアプリが採用している<a
+href="https://www.npmjs.com/package/uhtml">uhtml</a>
+というシンプルなHTMLテンプレートエンジンは初めて知った。あんまりSPAフレームワーク使いたくない場合には良さそう。</p>
+<h2 id="did">DID</h2>
+<p><a href="https://atproto.com/specs/did">DID - AT Protocol</a></p>
+<p>Decentralized identifierの略で、<a
+href="https://www.w3.org/TR/did-1.0/">W3Cによって標準化</a>されているらしい。知らなかった...</p>
+<p>標準の文書全部読むのは別の機会にするとして、雑に言うと分散型の識別子で中央集権的な管理者がいないのが特徴らしい。
+中身はURIの形式で <code>did:method:identifier</code> みたいな感じ。</p>
+<p><img src="https://www.w3.org/TR/did-1.0/diagrams/parts-of-a-did.svg"
+alt="A simple example of a decentralized identifier (DID) " /><br />
+<sub><sup>via <a
+href="https://www.w3.org/TR/did-1.0/#a-simple-example">https://www.w3.org/TR/did-1.0/#a-simple-example</a></sup></sub></p>
+<p>ATProtocolでは <code>did:web</code> と <code>did:plc</code>
+の2つのDIDメソッドが使われているけど、前者はDNSと同じ仕組みなのでドメイン名の所有者が移管された時にマイグレーションしなくちゃいけないんだけどそのメカニズムは提供されていないので、後者の
+<code>did:plc</code> を使うのが良さそう？</p>
+<p>これが具体的にどうATProtocolやBluesky上で関係しているかはまだよく分かっていない。</p>
+<p><a
+href="https://github.com/did-method-plc/did-method-plc">did-method-plc/did-method-plc:
+Public Ledger of Credentials: a cryptographic, strongly-consistent, and
+recoverable DID method</a></p>
+<h2 id="repository">Repository</h2>
+<p>チュートリアル上では<a
+href="https://atproto.com/specs/repository">Repository</a>の詳細はあんまり説明されていなかったけど、
+ユーザーの操作結果がRepositoryに保存され、それがfirehose(イベントのアグリゲーターみたいなもの?)というもので他のユーザーにイベントログとして配信される仕組みらしい。</p>
+<p>個人的に、このRepositoryがユーザーデータの保存場所として個人の制御化に置ける(んだよね?)点がおもしろいと思っているんだけれど、チュートリアル上ではどこに保存されているかわからないし、Blueskyでも
+Repository がどこにあるのかよくわかっていない。</p>
+<p>とはいえ、イベントログとして配信される仕組みをベースとしたイベント駆動アーキテクチャは面白くて、それを活用したアプリケーションの設計は楽しそう。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>大体雰囲気はわかったけれど、まだ DID とか Repository とか firehose
+とかの詳細がよくわかってないので、もう少し調べてみたい。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
