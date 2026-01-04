@@ -35,7 +35,7 @@ endef
 
 $(foreach f,$(POSTS_SRC),$(eval $(call POST_RULE,$(f))))
 
-$(DST)/posts.html: $(SRC)/posts.md
+$(DST)/posts.html: $(SRC)/posts.md $(POST_HTML_FILES)
 	@mkdir -p $(TMP_DIR)
 	@cp -f $(SRC)/posts.md $(TMP_DIR)/posts.md
 	@for f in $(shell find ./posts -type f | sort -r); do \
