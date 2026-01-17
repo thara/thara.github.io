@@ -63,8 +63,8 @@ serve: all
 debug:
 	@echo $(HTML_FILES)
 
-.PHONE: add_post
-add_post:
+.PHONE: post
+post:
 	@echo "Title: "
 	@read title; \
 	date=$(shell date +%Y-%m-%d); \
