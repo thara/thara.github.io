@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>開発環境現状確認2026 - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="開発環境現状確認2026 - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="開発環境現状確認2026 - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>開発環境現状確認2026</h1>
+    <ul>
+      <li>published: <time>2026-01-17</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>そういえば、こういう流れあったな、と思い出したので自分も書いてみる。
+（書いてみようと思って書いてなかったやつ）</p>
+<ul>
+<li><a
+href="https://k0kubun.hatenablog.com/entry/development-environment-2026">開発環境現状確認
+2026 - k0kubun's blog</a></li>
+<li><a
+href="https://giginet.hateblo.jp/entry/2026/01/14/101200">開発環境現状確認2026
+- 5.1さらうどん</a></li>
+<li><a
+href="https://r7kamura.com/articles/2026-01-15-development-environment-2026">開発環境2026</a></li>
+<li><a
+href="https://blog-dry.com/entry/2026/01/02/145952">開発環境現状確認（2026年）
+- Don't Repeat Yourself</a></li>
+</ul>
+<h2 id="os">OS</h2>
+<p>macOSが中心。</p>
+<p>たまにSwift触るけど頻度下がってるのでLinuxも使いたいなと思いつつ、GUIは一番macOSが洗練されていて使いやすいと感じているのでSSHするとかmultipassとかでLinux
+VM立てて使う感じに落ち着きそう。</p>
+<h2 id="エディタ">エディタ</h2>
+<p>基本的にターミナル上でvim。neovimにしないのは特に理由はない。ターミナル上で完結するのが好きなので、GUIエディタは必要に応じて使う程度。</p>
+<ul>
+<li>Markdownをpreviewにしながら書きたいときはVSCode</li>
+<li>mac/iOSアプリを書くときはXcode</li>
+</ul>
+<p>JetBrains製品も必要に応じて使うけど、最近はJetBrains製品をあまり使う機会がない。</p>
+<h2 id="コーディングエージェント">コーディングエージェント</h2>
+<p>GitHub CopilotとCloud Codeを併用。</p>
+<p>GitHub
+Copilotは賢いコード補完として、vim上でオムニ補完とかその他の補完と組み合わせて使ってる。</p>
+<p>Cloud
+Codeはあんまり活用できている感はないんだけど、テストコード生成とかPlan
+modeを壁打ち相手として使ってる。
+skillsとかあんまり活用できてないので今後の課題かな。</p>
+<p>コード生成全部任せるよりはペアプログラミング的に使うのが自分には合ってる気がする。
+よくコーディングエージェントがドライバーで自分はナビゲータ、みたいな話を聞くけど、自分の場合は逆の方がしっくり来てる。</p>
+<p>しっくり来てる、というか、その方が面白いというか。自分の場合、コードを書いて問題を理解するタイプなので、コードを書かないと理解が進まなくて適切に指示もできない。時代に遅れている、と言われれば、そう。</p>
+<p>あんまり物量が求められるような領域のコードを書いてない、というのもあるかも。</p>
+<h2 id="ターミナルエミュレータ">ターミナルエミュレータ</h2>
+<p>macOS標準のTerminal.app を使ってる。</p>
+<p>ただTerminal.appに不満がないわけではなくて、ペインとかタブとかいらない。ショートカットキーで暴発するのが嫌。
+ターミナルマルチプレクサはtmuxを使ってるので、そっちでペインとタブとかを管理しているので。</p>
+<p>最近WezTermで <a
+href="https://www.docswell.com/s/mozumasu/5DWPG4-dotfiles-dragon#p15">直前のコマンド出力をコピーする</a>
+みたいなことができるのを知って、ちょっと興味が出てきているが大半の機能は不要なので乗り換えるかどうかは微妙。</p>
+<p>むしろ自作してもええんちゃうか、って思っている今日この頃。</p>
+<h2 id="ターミナルマルチプレクサ">ターミナルマルチプレクサ</h2>
+<p>前述のようにtmuxを使っている。</p>
+<p>ペインとかタブとかの管理以外にもキーボードだけで範囲選択できたりとかも便利。</p>
+<h2 id="シェル">シェル</h2>
+<p>bashを使っている。</p>
+<p>はるか昔にzsh使っていたが、zsh特有の機能をあまり使わなかったのでbashに戻した。</p>
+<h2 id="ランチャー">ランチャー</h2>
+<p>Alfredを使っているけど、標準のSpotlightでも全く問題がないことに最近気づいた。</p>
+<h2 id="フォント">フォント</h2>
+<p>あまりこだわりがないのでSF
+Monoを使っている。リガチャは趣味じゃない。</p>
+<h2 id="webブラウザ">Webブラウザ</h2>
+<p>Firefox</p>
+<p>たま〜にうまく動かないWebサイトが出てきたときはSafari,
+Chromeの順で試す。</p>
+<h2 id="開発環境のセットアップ">開発環境のセットアップ</h2>
+<p>Homebrew</p>
+<p>言語ランタイムの管理はasdf。</p>
+<p>mitamae
+を開発環境のプロビジョニングツールを使ってる事例見て、興味が出てきた。</p>
+<h2 id="dotfiles">dotfiles</h2>
+<p><a href="https://github.com/thara/dotfiles">thara/dotfiles</a></p>
+<p>設定ファイルの配置はGNU Stow。</p>
+<h2 id="ノートテイキング">ノートテイキング</h2>
+<p><a href="https://github.com/vimwiki/vimwiki">vimwiki/vimwiki</a></p>
+<p>どこでvim開いてても <code>&lt;Leader&gt;w&lt;Leader&gt;w</code>
+でdaily noteにジャンプしてサッと書けるようにしている。
+ファイルフォーマットはmarkdownにしてるので、Obsidianから開くこともある。</p>
+<h2 id="キーボード">キーボード</h2>
+<p>MacBook Air 2022
+M2を常用しているので、それの組み込みキーボードを使っている。</p>
+<p>外付けキーボードもいっぱい持ってるけど、ハードウェアとしてラップトップが好きなのでこれを使いがち。</p>
+<h2 id="キーリマッパー">キーリマッパー</h2>
+<p><a
+href="https://karabiner-elements.pqrs.org/">Karabiner-Elements</a>を長年愛用。</p>
+<p>とはいえ複雑なリマップはしておらず、コマンドキーによる英数/かな切り替えぐらいなので、
+<a href="https://ei-kana.appspot.com/">⌘英かな</a>
+に移行してもいいかもしれない。</p>
+<h2 id="マウストラックパッド">マウス・トラックパッド</h2>
+<p>ラップトップ好きとはいえ、組み込みトラックパッドだと手首が痛くなるのでロジクール
+MX ERGO MXTB1sを使っている。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>すでに考え方としては<a
+href="./choosing-under-constraints.html">制約の中で選ぶもの</a>
+で書いてあるので、それを実際にどう運用しているかが現れている感じ。</p>
+<p>10年以上同じような感じでやってきているので、あまり大きな変化はないけど、細かい部分での改善は続けていきたい。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
