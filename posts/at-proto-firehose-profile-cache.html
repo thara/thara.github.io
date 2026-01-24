@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>AT Protocol:
+Firehoseイベントからプロフィールをキャッシュする - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="AT Protocol:
+Firehoseイベントからプロフィールをキャッシュする - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="AT Protocol:
+Firehoseイベントからプロフィールをキャッシュする - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>AT Protocol:
+Firehoseイベントからプロフィールをキャッシュする</h1>
+    <ul>
+      <li>published: <time>2026-01-24</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p><a
+href="./at-proto-statusphere-display-name.html">前回の記事</a>で、ステータス投稿時に投稿者のプロフィールをキャッシュする実装を行った。しかし、これだと他ユーザーが投稿したステータス（Firehose経由で受信）の投稿者プロフィールがキャッシュされず、display
+nameが表示されないという課題があった。</p>
+<p>今回は、前回の記事の最後で挙げた「ステータス投稿イベント監視時に、その投稿者のプロフィールを取得してキャッシュする」アプローチを実装した。</p>
+<p>実装内容は<a
+href="https://github.com/thara/statusphere-example-app/pull/7">これ</a>。</p>
+<h2
+id="分散プロトコルにおけるプロフィール取得">分散プロトコルにおけるプロフィール取得</h2>
+<p>AT Protocolは分散プロトコルであり、各ユーザーのデータは異なるPDS
+(Personal Data Server)
+に保存されている。そのため、あるユーザーのプロフィールを取得するには、まず「そのユーザーのデータがどこにあるか」を知る必要がある。</p>
+<h3 id="did-と-did-document">DID と DID Document</h3>
+<p>AT Protocolでは、ユーザーは <a
+href="https://atproto.com/specs/did">DID (Decentralized Identifier)</a>
+で識別される。例えば <code>did:plc:z72i7hdynmk6r22z27h6tvur</code>
+のような形式だ。</p>
+<p>DIDを解決すると、DID
+Documentが得られる。これにはそのユーザーのPDSのURLが含まれている:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;did:plc:z72i7hdynmk6r22z27h6tvur&quot;</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;service&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;#atproto_pds&quot;</span><span class="fu">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;AtprotoPersonalDataServer&quot;</span><span class="fu">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;serviceEndpoint&quot;</span><span class="fu">:</span> <span class="st">&quot;https://bsky.social&quot;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="er">...</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="プロフィール取得の流れ">プロフィール取得の流れ</h3>
+<p>Firehoseからステータスイベントを受信した時、イベントには
+<code>authorDid</code>
+しか含まれていない。プロフィールを取得するには以下の手順が必要になる:</p>
+<pre><code>1. DID解決: did:plc:xxx → DID Document
+2. PDS特定: DID Document → serviceEndpoint (例: https://bsky.social)
+3. プロフィール取得: PDS に getRecord を呼び出し</code></pre>
+<p>コードで書くとこんな感じ:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// 1. DID Document を解決</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> didDoc <span class="op">=</span> <span class="cf">await</span> idResolver<span class="op">.</span><span class="at">did</span><span class="op">.</span><span class="fu">resolve</span>(did)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">// 2. PDS の URL を取得</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> pdsService <span class="op">=</span> didDoc<span class="op">.</span><span class="at">service</span><span class="op">?.</span><span class="fu">find</span>(</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  (s) <span class="kw">=&gt;</span> s<span class="op">.</span><span class="at">id</span> <span class="op">===</span> <span class="st">&#39;#atproto_pds&#39;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> pdsUrl <span class="op">=</span> pdsService<span class="op">.</span><span class="at">serviceEndpoint</span>  <span class="co">// &quot;https://bsky.social&quot;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">// 3. 認証なしの Agent でプロフィールを取得</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> agent <span class="op">=</span> <span class="kw">new</span> <span class="fu">Agent</span>({ service<span class="op">:</span> pdsUrl })</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> profile <span class="op">=</span> <span class="cf">await</span> agent<span class="op">.</span><span class="at">com</span><span class="op">.</span><span class="at">atproto</span><span class="op">.</span><span class="at">repo</span><span class="op">.</span><span class="fu">getRecord</span>({</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  repo<span class="op">:</span> did<span class="op">,</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  collection<span class="op">:</span> <span class="st">&#39;app.bsky.actor.profile&#39;</span><span class="op">,</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  rkey<span class="op">:</span> <span class="st">&#39;self&#39;</span><span class="op">,</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
+<p>従来のWebアプリケーション開発では「ユーザーデータは自分のDBにある」という前提だったが、分散プロトコルでは「ユーザーデータは世界中に散らばっている」という前提になる。これが根本的な発想の違いだと感じる。</p>
+<h2
+id="認証なしでプロフィールが取得できる理由">認証なしでプロフィールが取得できる理由</h2>
+<p>上記のコードでは認証情報を渡していない。これで動くのは、AT
+Protocolのリポジトリが<strong>公開データ</strong>として設計されているため。</p>
+<p><a
+href="https://atproto.com/specs/repository">Repository仕様</a>には以下のように明記されている:</p>
+<blockquote>
+<p>"Public atproto content (records) is stored in per-account
+repositories... current repository contents are publicly available"</p>
+</blockquote>
+<p>つまり、リポジトリに保存される「レコード」は<strong>すべて公開</strong>される:</p>
+<ul>
+<li><code>app.bsky.actor.profile</code> (プロフィール)</li>
+<li><code>app.bsky.feed.post</code> (投稿)</li>
+<li><code>xyz.statusphere.status</code> (ステータス)</li>
+</ul>
+<p>一方、<code>app.bsky.actor.preferences</code>
+のようなユーザー設定は、リポジトリではなくPDS上の別の領域に保存される。これらは専用のAPI
+(<code>app.bsky.actor.getPreferences</code>)
+でのみ取得でき、認証が必要。</p>
+<p>公開か非公開かを見分けるには、<a
+href="https://github.com/bluesky-social/atproto/tree/main/lexicons">Lexicon定義</a>で
+`type: "record"` かどうかを確認すればよい。<a
+href="https://atproto.com/specs/lexicon">Lexicon仕様</a>では、record型は
+"Specifies schema of data objects stored in Repositories"
+と定義されている。</p>
+<p>例えば <a
+href="https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/actor/profile.json">profile.json</a>
+を見ると <code>"type": "record"</code>
+となっているため、リポジトリに保存され公開される。一方、<a
+href="https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/actor/getPreferences.json">getPreferences.json</a>
+は <code>"type": "query"</code> であり、リポジトリには保存されない。</p>
+<h2 id="firehose処理をブロックしない">Firehose処理をブロックしない</h2>
+<p>今回の実装で気をつけたのは、プロフィール取得がFirehoseのイベント処理をブロックしないようにすること。</p>
+<p>Firehoseは大量のイベントをリアルタイムで受信するため、各イベントの処理は高速に完了させる必要がある。プロフィール取得はネットワークI/Oを伴うため、同期的に実行するとFirehose全体の処理が詰まってしまう。</p>
+<p>そのため、プロフィール取得は非同期で実行し、完了を待たずに次のイベント処理に進むようにした:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">// ステータス保存後</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="op">!</span>profileCached) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// await しない = Firehose処理をブロックしない</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fetchAndCacheProfile</span>(did<span class="op">,</span> db<span class="op">,</span> idResolver<span class="op">,</span> logger)<span class="op">.</span><span class="fu">catch</span>(() <span class="kw">=&gt;</span> {})</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>プロフィール取得に失敗しても、ステータス自体は正常に保存される。display
+nameは次回のページ読み込み時に表示されればよいので、この程度の遅延は許容範囲とする。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>今回の実装を通じて、分散プロトコル上でのデータ取得の考え方を学んだ:</p>
+<ul>
+<li><strong>DID解決が必要</strong>:
+ユーザーのデータがどのサーバーにあるか、DID Documentから特定する</li>
+<li><strong>公開データモデル</strong>:
+プロフィールなどの公開データは認証なしで取得可能</li>
+<li><strong>非同期処理の重要性</strong>:
+Firehoseのようなリアルタイムストリームでは、ブロッキング処理を避ける</li>
+</ul>
+<p>前回の記事で挙げたもう一つのアプローチ「スキーマにdisplay
+nameを含める」は、AT
+Protocolの分散性を考えると筋が悪いと判断した。プロフィールは頻繁に更新される可能性があり、ステータスレコードに埋め込むと古いデータが残り続けてしまう。必要な時に最新のプロフィールを取得する今回のアプローチの方が、分散プロトコルの特性に合っていると思う。</p>
+<h2 id="参考リンク">参考リンク</h2>
+<ul>
+<li><a href="https://atproto.com/specs/did">AT Protocol:
+Identity</a></li>
+<li><a href="https://atproto.com/specs/repository">AT Protocol:
+Repository</a></li>
+<li><a
+href="https://github.com/thara/statusphere-example-app/pull/7">実装PR</a></li>
+</ul>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
