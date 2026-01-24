@@ -69,19 +69,23 @@ const profile = await agent.com.atproto.repo.getRecord({
 
 ## 認証なしでプロフィールが取得できる理由
 
-上記のコードでは認証情報を渡していない。これで動くのは、AT Protocolではプロフィールが**公開データ**として設計されているため。
+上記のコードでは認証情報を渡していない。これで動くのは、AT Protocolのリポジトリが**公開データ**として設計されているため。
 
-AT Protocolのリポジトリ内のデータは基本的に公開されている:
+[Repository仕様](https://atproto.com/specs/repository)には以下のように明記されている:
 
-- `app.bsky.actor.profile` (プロフィール) → 公開
-- `app.bsky.feed.post` (投稿) → 公開
-- `xyz.statusphere.status` (ステータス) → 公開
+> "Public atproto content (records) is stored in per-account repositories... current repository contents are publicly available"
 
-一方、ユーザーの設定など一部のデータは非公開で、認証が必要:
+つまり、リポジトリに保存される「レコード」は**すべて公開**される:
 
-- `app.bsky.actor.preferences` → 非公開
+- `app.bsky.actor.profile` (プロフィール)
+- `app.bsky.feed.post` (投稿)
+- `xyz.statusphere.status` (ステータス)
 
-`com.atproto.repo.getRecord` は公開レコードに対しては認証不要で呼び出せる。これにより、任意のユーザーのプロフィールを取得できる。
+一方、`app.bsky.actor.preferences` のようなユーザー設定は、リポジトリではなくPDS上の別の領域に保存される。これらは専用のAPI (`app.bsky.actor.getPreferences`) でのみ取得でき、認証が必要。
+
+公開か非公開かを見分けるには、[Lexicon定義](https://github.com/bluesky-social/atproto/tree/main/lexicons)で `type: "record"` かどうかを確認すればよい。[Lexicon仕様](https://atproto.com/specs/lexicon)では、record型は "Specifies schema of data objects stored in Repositories" と定義されている。
+
+例えば [profile.json](https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/actor/profile.json) を見ると `"type": "record"` となっているため、リポジトリに保存され公開される。一方、[getPreferences.json](https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/actor/getPreferences.json) は `"type": "query"` であり、リポジトリには保存されない。
 
 ## Firehose処理をブロックしない
 
