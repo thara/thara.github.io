@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Protocol-Driven Development - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Protocol-Driven
+Development - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Protocol-Driven
+Development - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Protocol-Driven Development</h1>
+    <ul>
+      <li>published: <time>2026-02-01</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p>10年弱前にファミコンエミュレータをSwiftで書き始めようと思った時、どこから始めれば良いのか全く分からなかった。</p>
+<p><a href="https://www.nesdev.org/wiki/NES_reference_guide">NESdev
+Wiki</a>
+を見ても内部構造についての説明はあるが、コードを書き始めるとっかかりが見当もつかなかった。
+なるべく自分の手で作りたくて、他のエミュレータのコードを読むことも避けていたので、暗礁に乗り上げた。</p>
+<p>ファミコンエミュレータは作ったことはなかったが、CPUというものが何かは知っている。そこで、実装をどう進めていけばいいかはわからなかったが、以下のようなprotocolを定義してみた。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode swift"><code class="sourceCode swift"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> OpCode <span class="op">{}</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Instruction <span class="op">{}</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">protocol</span> Cpu <span class="op">{</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">func</span> <span class="fu">fetch</span><span class="op">()</span> -&gt; <span class="fu">OpCode</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">func</span> <span class="fu">decode</span><span class="op">(</span><span class="va">_</span> <span class="va">opcode</span><span class="op">:</span> <span class="dt">OpCode</span><span class="op">)</span> -&gt; <span class="fu">Instruction</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">func</span> <span class="fu">execute</span><span class="op">(</span><span class="va">_</span> <span class="va">instruction</span><span class="op">:</span> <span class="dt">Instruction</span><span class="op">)</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">extension</span> <span class="fu">Cpu</span> <span class="op">{</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">func</span> <span class="fu">run</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> <span class="va">opcode</span> <span class="op">=</span> fetch<span class="op">()</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> <span class="va">instruction</span> <span class="op">=</span> decode<span class="op">(</span>opcode<span class="op">)</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        execute<span class="op">(</span>instruction<span class="op">)</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>via <a
+href="https://github.com/thara/SwiftNES/blob/b309be2ee243a215ec34fc8e7be796dee79ca232/Sources/SwiftNES/CPU/Cpu.swift">Cpu.swift</a></p>
+<p>このコードによって動作するものは何もないが、コンパイルは通る。そして、これはCPUの基本的な動作を表現している。</p>
+<p>これを書いた時に、目の前がパッと明るくなった気がした。</p>
+<p>自分がこれから何を実装していけばいいか、どのように進めていけばいいかがわかった。今までふんわりとしていたCPUエミュレーションを、fetch-decode-executeという3つのステップに分解できたことで、実装も小さなタスクに分割できるようになった。</p>
+<p>この体験から、自分が問題をどのように理解しているのかが見えてきた。</p>
+<h3 id="protocol-driven-development">Protocol-Driven Development</h3>
+<p>ここで言う protocol はSwiftの言語機構に限定されない。
+問題の構造と責務を明示する「契約」を指している。struct や enum
+のようなデータ構造も、ユニットテストも、この意味での protocol
+に含まれる。</p>
+<p>Protocol-Driven Development とは、問題を理解するために protocol
+を定義し、 その protocol
+を実装することで問題を解決していく開発手法である。</p>
+<p>SwiftにおけるProtocol Oriented
+Programming(POP)はよく知られているが、この Protocol-Driven Development
+は自分の造語であり、POPとは全く異なる。</p>
+<p>この手法のポイントは、protocol
+を定義すること自体が問題の理解を深める行為ということ。protocol
+を定義しコンパイルを通すことで、その問題の構造が明確になり、実装すべき詳細が見えてくる。</p>
+<p>この protocol
+はSwiftの言語機構から出発点としているが、そのprotocolを構成するためのデータ構造(struct
+や enum)も、この protocol と考えられる。</p>
+<p>Haskellなどの静的型付け関数型言語の界隈で言われる "型駆動開発
+(Type-Driven Development)"
+に近い。型駆動開発が型の精緻化によって仕様を表現するのに対し、Protocol-Driven
+Development はインターフェースの分割と責務の明示に重点を置く。</p>
+<h3 id="agentic-coding時代への適用">Agentic Coding時代への適用</h3>
+<p>Protocol-Driven Development は、AIアシスタントと協働する Agentic
+Coding
+時代にも有効ではないかと考えている。ただし、これはまだ検証していない仮説に過ぎない。</p>
+<p>想定しているのはこういう流れ:</p>
+<ol type="1">
+<li>人間が問題を理解するために protocol を定義する</li>
+<li>その protocol をAIアシスタントに渡し、実装させる</li>
+<li>コンパイラとテストによって、意図通りの実装かを検証する</li>
+</ol>
+<p>人間はコンパイラによって問題の構造や制約が正しいかを検証でき、AIアシスタントは人間が定義した
+protocol
+をガイドとして実装を行うことで、意図どおりのコードを生成しやすくなる——という期待。</p>
+<p>その言語のコンパイラでは表現できない制約やルールは、ユニットテストやプロパティベースドテストとして
+protocol
+に付随させることで、AIアシスタントがフィードバックループを回しやすくなり、より正確な実装が期待できる。少なくとも、意図から大きく外れた実装を早期に検出できる。</p>
+<p>このユニットテストやプロパティベースドテストも、仕様を表現する一種の
+protocol と考えてもいいだろう。</p>
+<p>依存型を持つ言語であれば、ユニットテストやプロパティベースドテストの多くを型として表現できるため、より強力な
+Protocol-Driven Development が可能になるかもしれない。</p>
+<h3 id="動作環境での動的な検証">動作環境での動的な検証</h3>
+<p>ここから発展して、コンパイラによって静的に検証されたprotocol、テストによって動的に検証するprotocolに加えて、更に実際の動作環境でprotocol通りの動作をしているかを検証する仕組みがあっても良いかもしれない。</p>
+<p>それはおそらく、可観測性(Observability)の仕組みと結びつくことになるだろう。</p>
+<p>SLI/SLOのような概念を取り入れ、protocolに基づいた動作が期待通りに行われているかをモニタリングし、逸脱があればアラートを上げたり、自動修正のトリガーにしたりする仕組みだ。</p>
+<p>AIアシスタントは現状自然言語を主な入力としているが、Protocol-Driven
+Developmentはそこにprotocolというガイドを提供した。さらに、SLI/SLOにも自然言語ではなく検証済みのprotocolを提供することで、AIアシスタントがより正確にシステムの状態を把握し、適切な対応を行えるようになるかもしれない。</p>
+<h3 id="抽象レイヤーと信頼性レイヤー">抽象レイヤーと信頼性レイヤー</h3>
+<p><a href="./trying-cline.html">過去の記事</a>
+では、"生成AI時代の信頼性設計"
+として信頼性のレイヤーについて触れた。</p>
+<p>Protocol-Driven Development における protocol
+の抽象レイヤーと、信頼性設計における信頼性レイヤーは一致するのではないか。</p>
+<p>テストは対象とするprotocolと同じ抽象レイヤーに基づいて設計される。その抽象レイヤー自体がテストレベルを決定づける。信頼性においても同様で、各抽象レイヤーに応じた信頼性対策を講じるはずだ。SLI/SLOは、最もエンドユーザに近いレイヤーのprotocolに基づいて定義された指標/目標値、ということになる。</p>
+<p>テストレベルと信頼性レイヤー、どちらもprotocolを中心に据えることで、システム全体の検証アプローチが一貫する。</p>
+<p>今後、AIエージェントと協働してソフトウェアを開発していくことが主流になっていくと考えられるが、そのさらに先、AIエージェントがシステムそのものに組み込まれる時代こそ、この一貫性が重要になるのではないか。</p>
+<p>これらはまだ直感の域を出ないが、今後検証していきたい仮説の一つだ。</p>
+<h3 id="まとめ">まとめ</h3>
+<p>Protocol-Driven Development は当然ながら完成した手法ではない。</p>
+<p>だが、AIと共にソフトウェアを作る時代において、人間が「何を考え、何を信じているのか」をコードとして残す一つの方法にはなりうるのではないかと考えている。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
