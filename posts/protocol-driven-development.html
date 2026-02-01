@@ -55,7 +55,7 @@ href="https://github.com/thara/SwiftNES/blob/b309be2ee243a215ec34fc8e7be796dee79
 <p>これを書いた時に、目の前がパッと明るくなった気がした。</p>
 <p>自分がこれから何を実装していけばいいか、どのように進めていけばいいかがわかった。今までふんわりとしていたCPUエミュレーションを、fetch-decode-executeという3つのステップに分解できたことで、実装も小さなタスクに分割できるようになった。</p>
 <p>この体験から、自分が問題をどのように理解しているのかが見えてきた。</p>
-<h3 id="protocol-driven-development">Protocol-Driven Development</h3>
+<h2 id="protocol-driven-development">Protocol-Driven Development</h2>
 <p>ここで言う protocol はSwiftの言語機構に限定されない。
 問題の構造と責務を明示する「契約」を指している。struct や enum
 のようなデータ構造も、ユニットテストも、この意味での protocol
@@ -76,7 +76,7 @@ Programming(POP)はよく知られているが、この Protocol-Driven Developm
 (Type-Driven Development)"
 に近い。型駆動開発が型の精緻化によって仕様を表現するのに対し、Protocol-Driven
 Development はインターフェースの分割と責務の明示に重点を置く。</p>
-<h3 id="agentic-coding時代への適用">Agentic Coding時代への適用</h3>
+<h2 id="agentic-coding時代への適用">Agentic Coding時代への適用</h2>
 <p>Protocol-Driven Development は、AIアシスタントと協働する Agentic
 Coding
 時代にも有効ではないかと考えている。ただし、これはまだ検証していない仮説に過ぎない。</p>
@@ -96,13 +96,13 @@ protocol
 protocol と考えてもいいだろう。</p>
 <p>依存型を持つ言語であれば、ユニットテストやプロパティベースドテストの多くを型として表現できるため、より強力な
 Protocol-Driven Development が可能になるかもしれない。</p>
-<h3 id="動作環境での動的な検証">動作環境での動的な検証</h3>
+<h2 id="動作環境での動的な検証">動作環境での動的な検証</h2>
 <p>ここから発展して、コンパイラによって静的に検証されたprotocol、テストによって動的に検証するprotocolに加えて、更に実際の動作環境でprotocol通りの動作をしているかを検証する仕組みがあっても良いかもしれない。</p>
 <p>それはおそらく、可観測性(Observability)の仕組みと結びつくことになるだろう。</p>
 <p>SLI/SLOのような概念を取り入れ、protocolに基づいた動作が期待通りに行われているかをモニタリングし、逸脱があればアラートを上げたり、自動修正のトリガーにしたりする仕組みだ。</p>
 <p>AIアシスタントは現状自然言語を主な入力としているが、Protocol-Driven
 Developmentはそこにprotocolというガイドを提供した。さらに、SLI/SLOにも自然言語ではなく検証済みのprotocolを提供することで、AIアシスタントがより正確にシステムの状態を把握し、適切な対応を行えるようになるかもしれない。</p>
-<h3 id="抽象レイヤーと信頼性レイヤー">抽象レイヤーと信頼性レイヤー</h3>
+<h2 id="抽象レイヤーと信頼性レイヤー">抽象レイヤーと信頼性レイヤー</h2>
 <p><a href="./trying-cline.html">過去の記事</a>
 では、"生成AI時代の信頼性設計"
 として信頼性のレイヤーについて触れた。</p>
@@ -112,7 +112,7 @@ Developmentはそこにprotocolというガイドを提供した。さらに、S
 <p>テストレベルと信頼性レイヤー、どちらもprotocolを中心に据えることで、システム全体の検証アプローチが一貫する。</p>
 <p>今後、AIエージェントと協働してソフトウェアを開発していくことが主流になっていくと考えられるが、そのさらに先、AIエージェントがシステムそのものに組み込まれる時代こそ、この一貫性が重要になるのではないか。</p>
 <p>これらはまだ直感の域を出ないが、今後検証していきたい仮説の一つだ。</p>
-<h3 id="まとめ">まとめ</h3>
+<h2 id="まとめ">まとめ</h2>
 <p>Protocol-Driven Development は当然ながら完成した手法ではない。</p>
 <p>だが、AIと共にソフトウェアを作る時代において、人間が「何を考え、何を信じているのか」をコードとして残す一つの方法にはなりうるのではないかと考えている。</p>
     </article>
