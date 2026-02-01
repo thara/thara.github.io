@@ -40,7 +40,7 @@ via [Cpu.swift](https://github.com/thara/SwiftNES/blob/b309be2ee243a215ec34fc8e7
 
 この体験から、自分が問題をどのように理解しているのかが見えてきた。
 
-### Protocol-Driven Development
+## Protocol-Driven Development
 
 ここで言う protocol はSwiftの言語機構に限定されない。
 問題の構造と責務を明示する「契約」を指している。struct や enum のようなデータ構造も、ユニットテストも、この意味での protocol に含まれる。
@@ -55,7 +55,7 @@ SwiftにおけるProtocol Oriented Programming(POP)はよく知られている�
 
 Haskellなどの静的型付け関数型言語の界隈で言われる "型駆動開発 (Type-Driven Development)" に近い。型駆動開発が型の精緻化によって仕様を表現するのに対し、Protocol-Driven Development はインターフェースの分割と責務の明示に重点を置く。
 
-### Agentic Coding時代への適用
+## Agentic Coding時代への適用
 
 Protocol-Driven Development は、AIアシスタントと協働する Agentic Coding 時代にも有効ではないかと考えている。ただし、これはまだ検証していない仮説に過ぎない。
 
@@ -73,7 +73,7 @@ Protocol-Driven Development は、AIアシスタントと協働する Agentic Co
 
 依存型を持つ言語であれば、ユニットテストやプロパティベースドテストの多くを型として表現できるため、より強力な Protocol-Driven Development が可能になるかもしれない。
 
-### 動作環境での動的な検証
+## 動作環境での動的な検証
 
 ここから発展して、コンパイラによって静的に検証されたprotocol、テストによって動的に検証するprotocolに加えて、更に実際の動作環境でprotocol通りの動作をしているかを検証する仕組みがあっても良いかもしれない。
 
@@ -83,7 +83,7 @@ SLI/SLOのような概念を取り入れ、protocolに基づいた動作が期�
 
 AIアシスタントは現状自然言語を主な入力としているが、Protocol-Driven Developmentはそこにprotocolというガイドを提供した。さらに、SLI/SLOにも自然言語ではなく検証済みのprotocolを提供することで、AIアシスタントがより正確にシステムの状態を把握し、適切な対応を行えるようになるかもしれない。
 
-### 抽象レイヤーと信頼性レイヤー
+## 抽象レイヤーと信頼性レイヤー
 
 [過去の記事](./trying-cline.html) では、"生成AI時代の信頼性設計" として信頼性のレイヤーについて触れた。
 
@@ -97,7 +97,7 @@ Protocol-Driven Development における protocol の抽象レイヤーと、信
 
 これらはまだ直感の域を出ないが、今後検証していきたい仮説の一つだ。
 
-### まとめ
+## まとめ
 
 Protocol-Driven Development は当然ながら完成した手法ではない。
 
