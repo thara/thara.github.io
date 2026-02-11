@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>モバイルアプリのコアにRustを使う(2) -
+Android対応 - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="モバイルアプリのコアにRustを使う(2) -
+Android対応 - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="モバイルアプリのコアにRustを使う(2)
+- Android対応 - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>モバイルアプリのコアにRustを使う(2) - Android対応</h1>
+    <ul>
+      <li>published: <time>2026-02-11</time></li>
+    </ul>
+  </header>
+  <div role="main">
+    <article>
+<p><a
+href="./2026-02-08-use-rust-in-mobile-app.md">モバイルアプリのコアにRustを使う</a>ではiOSしか対応してなかったのでAndroidにも対応した。</p>
+<p><a
+href="https://github.com/thara-playground/rust-core-mobile-app/tree/main/android-app">thara-playground/rust-core-mobile-app</a></p>
+<p>AndroidのNDKまわり、昔cocos2d-xのビルドパフォーマンス改善をした時に触ったんだけど結構大変だった。<br />
+が、Rustのエコシステムが強くてそこら辺はほとんど気にしなくて良い感じになってた。</p>
+<ul>
+<li><a href="https://crates.io/crates/cargo-ndk">cargo-ndk</a>
+でAndroid向けのnativeバイナリを作成</li>
+<li><a href="https://github.com/mozilla/uniffi-rs">mozilla/uniffi-rs</a>
+でbinding生成</li>
+</ul>
+<p>Rustからのcallbackも自然に書ける。エコシステムの勝利、って感じ。</p>
+<p>関係ないけど、数年前と比べてgradleのKotlinサポートも問題なさそう。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
