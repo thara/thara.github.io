@@ -6,12 +6,12 @@ ${head.html()}
 <body>
   <header>
     <h1>$title$</h1>
-    <ul>
-      <li>published: <time>$published$</time></li>
+    <div class="timestamp">
+      <small>published: <time>$published$</time> </small>
 $if(last_modified)$
-      <li>last modified: <time>$last_modified$</time></li>
+      <small>last modified: <time>$last_modified$</time> </small>
 $endif$
-    </ul>
+    </div>
   </header>
   <div role="main">
     <article>

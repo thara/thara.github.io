@@ -2,6 +2,14 @@ body {
   line-height: 2;
 }
 
+h1 {
+  line-height: 1.25;
+}
+
+.timestamp {
+  margin-top: 10px;
+}
+
 /* for gist embed */
 table.highlight tr {
   border-top: 1px solid var(--dark);
