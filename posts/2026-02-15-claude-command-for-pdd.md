@@ -4,7 +4,9 @@ date: '2026-02-15'
 published: '2026-02-15'
 ---
 
-作った。実際に使ってみてどうかは、これから検証する。
+[先日の記事](./protocol-driven-development.html) で提唱したProtocol Driven Developmentを実践するためのClaude Code用slash commandの定義を作った。   
+
+実際に使ってみてどうかは、これから検証する。
 
 Claude codeのslash commandはskillに統合されたっぽいのだけれど、勝手に読み込んでほしくはないので description は指定しない。
 また、その意図を自分が忘れないように `.claude/commands` に配置している。
