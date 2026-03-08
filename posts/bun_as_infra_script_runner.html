@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>インフラ関係のスクリプトをBunで動かすのいいかもしれない - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="インフラ関係のスクリプトをBunで動かすのいいかもしれない - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="インフラ関係のスクリプトをBunで動かすのいいかもしれない - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>インフラ関係のスクリプトをBunで動かすのいいかもしれない</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-03-08</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>最近、JS/TSランタイムの<a
+href="https://bun.com/">Bun</a>が気になってる。
+自分はWebフロントエンドにあんまり興味はないが、BunとTypeScriptには次世代のインフラ関係のスクリプト実行環境としての可能性を感じている。</p>
+<p>TypeScriptは今や世界で最も使用される言語の一つだし、Webフロントエンドに限らず、サーバーサイドでも活用例が増えてきた。
+また、Bunは十分高速でall-in-oneだのでnode周辺のエコシステムの混沌（失礼）からも一定距離を保てる、という点でメリットがありそう。</p>
+<p>簡単なベンチマークは <a
+href="https://github.com/thara-playground/script_benchmark">thara-playground/script_benchmark</a>
+に置いた。</p>
+<p>特にCPU boundな処理はbunが圧倒しているが、ファイルI/Oも悪くない。</p>
+<p>Ansible
+Playbookの実行が重くて辟易することがあるんだけど、このパフォーマンスの良さが解決してくれるといいな。</p>
+<p>もちろん、SSHしてコマンド叩く、っていうデザイン自体がボトルネックになっているのもあると思うけれど、あらかじめスクリプトとかを置いておく、みたいなことしておけばSSHは最小限で済むし、まぁ設計でカバーできるかな、という感じ。</p>
+<p>PythonやRubyよりも、bunの方がシングルバイナリにできるので、そこら辺の設計はやりやすいかな、とも思う。</p>
+<p>bunでリモートホスト上で実行するパッケージをシングルバイナリにしておいて、それをscpで転送、SSH経由で実行、って感じ。</p>
+<p>シングルバイナリがどれぐらいの大きさかは気になるけど、大きいのであれば、スクリプト自体をプラガブルにしておいて、リモートホスト上にあらかじめランナーのバイナリ置いておく、みたいなことしておけば、スクリプトをホストで走らせるたびに巨大なバイナリを送信しなくて済むかな、と。</p>
+<p>こんな感じで、ホスト上でスクリプトを実行する、という課題に対して複数の選択肢があるのはいいね。</p>
+<hr />
+<p>Ansible,
+itamaeなどのような構成管理ツールや、fabricやCapistranoのようなデプロイツール、serverspecやtestinfraみたいな構成検証ツールなど、今までPythonやRubyなどが使用されていたインフラ関連のツールがbun
++ JS/TSで再発明される可能性もあるかもしれない...?</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
