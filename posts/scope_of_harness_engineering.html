@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Harness Engineeringのスコープ - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Harness
+Engineeringのスコープ - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Harness
+Engineeringのスコープ - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Harness Engineeringのスコープ</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-03-15</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p><a
+href="https://nyosegawa.github.io/posts/harness-engineering-best-practices-2026/#harness-engineering%E3%81%A8%E3%81%AF%E4%BD%95%E3%81%8B">Claude
+Code / Codex ユーザーのための誰でもわかるHarness
+Engineeringベストプラクティス</a> を読んで。</p>
+<p>Harness
+Engineeringはコーディングエージェントに適用されるものだけど、自分は
+"Harness"
+はコーディングエージェントそのものよりエージェントが作り出したソフトウェアに対しても適用すべきだと考えている。</p>
+<p>先の記事では主に、以下が "Harness" として挙げられていた。</p>
+<ul>
+<li>AGENTS.md/CLAUDE.md</li>
+<li>ADRなどのドキュメント</li>
+<li>リンター/型チェッカー/テストスイートなどの決定論的ツール</li>
+<li>Hooksによる品質フィードバックループ</li>
+<li>E2Eテスト</li>
+</ul>
+<p>これに対して、自分の考える "Harness"
+は、かなり抽象的だが以下のようなもの。</p>
+<ul>
+<li>現実世界とのインタフェースの規約</li>
+<li>業界標準のセキュリティ基準（PCI DSSなど）</li>
+<li>コスト</li>
+<li>コンプライアンス</li>
+<li>KPI</li>
+<li>SLO</li>
+<li>監査統制（ISMAPなど）</li>
+</ul>
+<p>などなど。</p>
+<p>これらをエージェントに対して自然言語などの曖昧さがある表現ではなく、先の記事中に述べられているような「決定論的なツール」で制約を加えたい。例えば、CELとかRegoとかOpen
+Policy Agentとか。</p>
+<p>つまり自分が実現したい "Harness"
+とは「ソフトウェアの外側から課される制約を、決定論的なツールで表現したもの」と言えそう。</p>
+<p>先の記事では、</p>
+<blockquote>
+<p>Harness
+Engineeringが数カ月後にはとくに重要でない分野になっている可能性はあります。Coding
+Agent自体に還元され、個々の開発者や組織が意識しなくても良い状態になっているかもしれませんし、LLMの能力が向上しHarness群自体が(あるいはHarness群の一部かもしれませんが)不要になっている可能性もあります。</p>
+</blockquote>
+<p>と述べられていたけれど、自分の考える "Harness"
+はコーディングエージェントとシステムが同一視される未来になったとしても有用だし、そもそもAI関係なく人間だけで開発されたシステムにも活用できる。</p>
+<p>自分の考える "Harness"
+から見れば、コーディングエージェントだろうがまだ見ぬAGIだろうが人間だろうが、曖昧性があるという点は変わらない。</p>
+<hr />
+<p>さて、この自分なりの "Harness" はもはや "Harness" =
+引き具、馬具、とは言いづらい。</p>
+<p>以前の記事で書いた <a
+href="./protocol-driven-development.html">Protocol-Driven
+Development</a>
+は対象がソースコード自体になっていたが、考え方としては同じだ。</p>
+<p>well-definedな点も同様なので、今まで述べてきた「自分が実現したい
+"Harness"」は "Protocol" と呼称するようにしたい。</p>
+<p>つまり、自分が真に実現したいのは "Protocol"
+の設計と運用を中心に据えた、AIの発展状況に依らず現実問題への影響を統制するソフトウェア開発論
+<strong>Protocol Engineering</strong> ということ。</p>
+<p>この Protocol Engineering
+についてはまた、後でじっくりとまとめたい。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
