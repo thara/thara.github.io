@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>setup-trivyの侵害コミットで自分の名前が詐称されていた件 - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="setup-trivyの侵害コミットで自分の名前が詐称されていた件 - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="setup-trivyの侵害コミットで自分の名前が詐称されていた件 - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>setup-trivyの侵害コミットで自分の名前が詐称されていた件</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-03-22</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p><a
+href="https://diary.shift-js.info/trivy-compromise/">2026年3月19日の
+Trivy 再侵害の概要と対応指針 – やっていく気持ち</a> を読んで。</p>
+<p>この記事では、 <a
+href="https://github.com/aquasecurity/setup-trivy">aquasecurity/setup-trivy</a>
+と <a
+href="https://github.com/aquasecurity/trivy-action">aquasecurity/trivy-action</a>
+にクレデンシャル窃取コードが注入するためにgit
+commitが以下のように偽装されたと書かれている。</p>
+<blockquote>
+<p>著者名の詐称: setup-trivy側のcommit 8afa9b9 は実在のコントリビュータ
+“thara” を、trivy-action側の ddb9da4 はAquaチームメンバー “DmitriyLewen”
+を author として詐称している</p>
+</blockquote>
+<p><strong>はい、このsetup-trivy側のコントリビュータ「thara」とは自分のことです。</strong></p>
+<h2 id="コントリビュート経緯">コントリビュート経緯</h2>
+<p>2026-01-13、setup-trivyの存在を知った自分はそれを使用しても問題ないかを検証するためにリポジトリ内のaction.yamlを確認しにいった。<br />
+そこでsetup-trivyが<a
+href="https://github.com/aquasecurity/trivy">aquasecurity/trivy</a>からcheckoutしてくるインストールスクリプト(
+`contrib/install.sh`)が常に最新のものを使用しており、それによってサプライチェーンアタックの可能性があることに気づき、以下のissueを立てた。</p>
+<p><a href="https://github.com/aquasecurity/setup-trivy/issues/27">Pin
+Trivy install script checkout to commit hash · Issue #27 ·
+aquasecurity/setup-trivy</a></p>
+<p>提案した修正方針が既存のコントリビュータに認められたため、続けてPRを作成した。</p>
+<p><a href="https://github.com/aquasecurity/setup-trivy/pull/28">Pin
+Trivy install script checkout to a specific commit by thara · Pull
+Request #28 · aquasecurity/setup-trivy</a></p>
+<p>自分の貢献はこの程度だが、この時のcommit
+logの情報を悪用されたようだ。</p>
+<h2 id="詐称されたコミット">詐称されたコミット</h2>
+<p>先の記事では、以下のように自分が詐称されたコミットが記載されている。</p>
+<pre><code>// GET /repos/aquasecurity/setup-trivy/commits/8afa9b9f9183b4e00c46e2b82d34047e3c177bd0
+{
+  &quot;sha&quot;: &quot;8afa9b9f9183b4e00c46e2b82d34047e3c177bd0&quot;,
+  &quot;commit&quot;: {
+    &quot;author&quot;: {&quot;name&quot;: &quot;Tomochika Hara&quot;, &quot;email&quot;: &quot;github@thara.dev&quot;, &quot;date&quot;: &quot;2026-01-15T10:21:20Z&quot;},
+    &quot;committer&quot;: {&quot;name&quot;: &quot;GitHub&quot;, &quot;email&quot;: &quot;noreply@github.com&quot;, &quot;date&quot;: &quot;2026-01-15T10:21:20Z&quot;},
+    &quot;message&quot;: &quot;Pin Trivy install script checkout to a specific commit (#28)&quot;,
+    &quot;verification&quot;: {&quot;verified&quot;: false, &quot;reason&quot;: &quot;unsigned&quot;}
+  },
+  &quot;author&quot;: {&quot;login&quot;: &quot;thara&quot;},
+  &quot;committer&quot;: {&quot;login&quot;: &quot;web-flow&quot;}
+}</code></pre>
+<p>比べて、自分が作成したPRに含まれるコミット(の一つ)は以下。</p>
+<pre><code>// GET /repos/aquasecurity/setup-trivy/commits/0fa8dc73b42c00a5983466410dcdab3a4071f21e より抜粋
+{
+    &quot;sha&quot;: &quot;0fa8dc73b42c00a5983466410dcdab3a4071f21e&quot;,
+    &quot;commit&quot;: {
+        &quot;author&quot;: {&quot;name&quot;: &quot;Tomochika Hara&quot;, &quot;email&quot;: &quot;git@thara.dev&quot;,  &quot;date&quot;: &quot;2026-01-13T08:27:30Z&quot;,},
+        &quot;committer&quot;: {&quot;name&quot;: &quot;Tomochika Hara&quot;, &quot;email&quot;: &quot;git@thara.dev&quot;, &quot;date&quot;: &quot;2026-01-14T08:48:52Z&quot;},
+        &quot;message&quot;: &quot;fix: pin Trivy install script to specific commit hash...(略)&quot;,
+        &quot;verification&quot;: {
+            &quot;payload&quot;: &quot;(略)&quot;,
+            &quot;reason&quot;: &quot;valid&quot;,
+            &quot;signature&quot;: &quot;(略)&quot;,
+            &quot;verified&quot;: true,
+            &quot;verified_at&quot;: &quot;2026-01-14T08:48:57Z&quot;
+        }
+    },
+    &quot;author&quot;: {&quot;login&quot;: &quot;thara&quot;},
+    &quot;committer&quot;: {&quot;login&quot;: &quot;thara&quot;}
+}</code></pre>
+<p>自分の正規のコミットと攻撃者が詐称したコミットを比べてみる。</p>
+<ul>
+<li>commit.{author|commiter}.emailが <code>git@thara.dev</code> ではなく
+<code>github@thara.dev</code> になっている
+<ul>
+<li><code>github@thara.dev</code> は自分のGitHubアカウントの<a
+href="https://docs.github.com/ja/account-and-profile/how-tos/email-preferences/changing-your-primary-email-address">プライマリメールアドレス</a>
+<ul>
+<li>先の記事中でも触れられているけれど、GitHubのcommit
+authorはメールアドレスさえ合わせれば誰でも詐称できる（署名なしの場合）</li>
+</ul></li>
+</ul></li>
+<li>commit.verification.verifiedがfalseになっている
+<ul>
+<li>自分は常に<a
+href="https://docs.github.com/ja/authentication/managing-commit-signature-verification/signing-commits">signed
+commit</a>している</li>
+<li>自分視点では自分が作成したcommitではないと明らかだけど、第3者から見たら確実なことは言えない、か...</li>
+</ul></li>
+<li>committer.login が <code>thara</code> ではなく <code>web-flow</code>
+になっている
+<ul>
+<li>GitHub上からマージした際に付与されるもの</li>
+</ul></li>
+</ul>
+<h2 id="自分への影響">自分への影響</h2>
+<p>直接的な実害はないが、個人のレピュテーション上の影響はあった。</p>
+<p>一応確認したが、GitHubアカウントやthara.devのメールアカウント（Google
+Workspaceで独自ドメイン設定しているやつ）にも不正なログインの兆候はなかった。</p>
+<p>あえて言えば、<a
+href="https://github.com/aquasecurity/setup-trivy/commit/8afa9b9f9183b4e00c46e2b82d34047e3c177bd0">詐称コミット</a>を見ると自分が攻撃したみたいで気分が悪い、ぐらいだろうか。</p>
+<p>ひとまず、プライベートや業務で使用しているメールアドレスをgit
+commitに使ってなくてよかった。</p>
+<h2 id="感想">感想</h2>
+<p>trivyが3週間前に侵害された時に「これって収束したと言えるんかな〜」と思っていたが、やっぱり次があった...<br />
+今まで儀式のようにsigned
+commitの設定をしていたけど、今回の件で改めて重要性を実感した。今後も続けていきたい。</p>
+<h2 id="まとめ">まとめ</h2>
+<p><a
+href="https://github.com/aquasecurity/setup-trivy/pull/28">自分がsetup-trivyに入れた変更</a>
+によって、v0.2.6、厳密にはcommit hash <a
+href="https://github.com/aquasecurity/setup-trivy/commit/3fb12ec12f41e471780db15c232d5dd185dcb514">3fb12ec</a>
+は安全に使えるので、setup-trivyを使う場合はそれを使ってください。</p>
+<p>setup-trivy以外にも、サードパーティのバイナリやGitHubアクションを使う場合は以下に気をつけましょう。</p>
+<ul>
+<li>バイナリダウンロード後にchecksumを検証する
+<ul>
+<li>checksumは動的にダウンロードするのではなく、あらかじめchecksumファイルをダウンロードする
+or CIの設定に直値を埋め込む</li>
+</ul></li>
+<li>setup-xxx を使用する際はGitHubアクションの実装を確認する
+<ul>
+<li>バイナリダウンロード後に検証しているか、インストールスクリプトの正当性が保証されているか、など</li>
+</ul></li>
+</ul>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
