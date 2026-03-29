@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>子ども向けiPad設定 - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="子ども向けiPad設定 - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="子ども向けiPad設定 - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>子ども向けiPad設定</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-03-29</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>子どもが春休みに入ったが、学校支給のタブレット(iPad)がちょうど入れ替え時期というので学校に返却してしまったため、子どもが手持ち無沙汰。</p>
+<p>最近使ってなかった自分のiPad Pro(12.9インチ)
+第3世代があったので、それを子ども用にセットアップした。</p>
+<p>王道は子ども用のAppleアカウント作ってペアレンタルコントロールする、というのだろうけど、春休みの間だけなのとめんどくさかったので、設定だけでなんとかした。</p>
+<p>以下、やったことをまとめておく。</p>
+<p>前提: iPadOS 26.3.1</p>
+<ul>
+<li>子どもに使わせたくないアプリをアンインストール
+<ul>
+<li>SNSとか昔入れてたソシャゲとか</li>
+</ul></li>
+<li>子どもに使わせたくないがアンインストールできないアプリをロック
+<ul>
+<li>アプリアイコン長押し -&gt; Touch
+IDを必要にする/パスコードを必要にする</li>
+<li>ref. <a
+href="https://support.apple.com/ja-jp/guide/iphone/iph00f208d05/ios">iPhoneでアプリをロックする/非表示にする
+- Apple サポート (日本)</a></li>
+</ul></li>
+<li>子どもが使っていたアプリをインストール
+<ul>
+<li>Scratch Jr.が入ってなかったので入れた</li>
+</ul></li>
+<li>アプリに対する制限(設定アプリ -&gt; スクリーンタイム)
+<ul>
+<li>アプリ使用時間の制限: オン
+<ul>
+<li>すべてのアプリおよびカテゴリ: 1日当たり2時間</li>
+</ul></li>
+<li>コンテンツとプライバシーの制限をオン
+<ul>
+<li>iTunesおよびApp Storeでの購入: 全部「許可しない」</li>
+<li>許可されたアプリと機能: 使わないやつ全部オフ
+<ul>
+<li>Safari, SharePlay, カメラのみオン</li>
+</ul></li>
+<li>App Store、メディア、Web、およびゲーム
+<ul>
+<li>許可されたメディアサービスコンテンツ: 「不適切な内容を含まない」 or
+「オフ」
+<ul>
+<li>アプリは子どもの年齢に合わせたレーティングに設定</li>
+</ul></li>
+<li>Webコンテンツ: 「許可されたWebサイトのみ」
+<ul>
+<li>「これらの承認されたWebサイトのみを許可」のデフォルトから以下を変更
+<ul>
+<li>YouTube Kids, Disney Plusを削除</li>
+<li><a href="https://zukan.pokemon.co.jp/">ポケモンずかん</a>を追加
+<ul>
+<li>(ホーム画面にも追加してある)</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>Game Center: 全部「許可しない」</li>
+</ul></li>
+<li>IntelligenceとSiri
+<ul>
+<li>画像作成: 許可しない
+<ul>
+<li>(そもそも推奨年齢が13歳以上)</li>
+</ul></li>
+<li>作文ツール: 許可しない</li>
+<li>インテリジェンス拡張: 許可しない
+<ul>
+<li>(そもそも「13歳未満の子供は使用できません」とあった)</li>
+</ul></li>
+<li>Siri
+<ul>
+<li>Siriと音声入力: オフ</li>
+<li>Web検索コンテンツ: 許可しない</li>
+<li>不適切な言葉: 許可しない</li>
+<li>(迷いどころではある)</li>
+</ul></li>
+<li>計算結果: 許可しない</li>
+</ul></li>
+<li>プライバシー: 全部「許可しない」</li>
+<li>変更を許可: 全部「許可しない」</li>
+</ul></li>
+<li>常に許可
+<ul>
+<li>許可された連絡先: 「指定した連絡先」に家族のみに設定</li>
+<li>許可されたアプリ: 電話、メッセージ、FaceTime、マップ</li>
+<li>(休止時間中はそもそもデバイス触らない前提なので、あんま深く考えてない)</li>
+<li>(触っている間にメッセージきたらどうしよう、って思ったけど通知全部切ってる
+&amp; アプリロックしてるから問題ないはず)</li>
+</ul></li>
+<li>コミュニケーションの制限: オン
+<ul>
+<li>休止時間外: "連絡先"のみ</li>
+<li>休止時間中: 「指定した連絡先」に家族のみに設定</li>
+</ul></li>
+<li>コミュニケーションの安全性: オン
+<ul>
+<li>(実際にこれが機能したこと見たことない...)</li>
+<li>(子供の安全に関する教材/資料を表示、というリンクが貼ってあった。WebViewで開くけどSafariで開けないのが趣)</li>
+</ul></li>
+</ul></li>
+</ul>
+<p>このぐらい。</p>
+<p>そもそも家でデバイス使う時間（Switchとかテレビとか）も決めてるし、好きにデバイス触れるようにはしてなくて子どももそれに慣れているので、何か事故が起きることはあんまり心配していないのだけれど、過去自分のミスでAmazon
+Prime
+Videoを自分のプロフィールで使ってて年齢レーティング超えの動画見てしまっていたことがあったので、それの自省として予め縛っておく。</p>
+<p>予防的統制、ってやつ。</p>
+<p>ちなみに「Amazon Prime
+Videoを自分のプロフィールで使ってて年齢レーティング超えの動画見てしまっていた」のは視聴履歴からわかったのだけれど、こっちは発見的統制、ですね。</p>
+<hr />
+<p>春休みの間の一時的な対応としてはこんなものかな...</p>
+<p>一旦こんな感じで様子見る。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
