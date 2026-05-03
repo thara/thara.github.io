@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>PR
+Agentにはサプライチェーン攻撃のリスクがある - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="PR
+Agentにはサプライチェーン攻撃のリスクがある - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="PR
+Agentにはサプライチェーン攻撃のリスクがある - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>PR Agentにはサプライチェーン攻撃のリスクがある</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-05-03</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p><a
+href="https://github.com/The-PR-Agent/pr-agent">PR-Agent</a>は、LLMを使用してGitHubのPull
+Requestのレビューを自動化するOSSのGitHub
+Actionsであり、いくつかの企業で採用している例を見かける。</p>
+<p>しかし、このPR-Agentの実装にはサプライチェーン攻撃のリスクがあり、そのリスクを認識した上で採用する必要がある。</p>
+<ol type="1">
+<li>Dockerベースイメージをpinningしていない</li>
+<li>pip installをHash-checking Modeで実行していない</li>
+<li>Dockerイメージのビルドプロセスが不明瞭</li>
+</ol>
+<h2 id="1-docker-ベースイメージをpinningしていない">1. Docker
+ベースイメージをpinningしていない</h2>
+<p>PR-AgentはDockerコンテナを使用したActionだが、そのDockerfileのベースイメージが以下のようにpinningされていない。</p>
+<pre><code>FROM python:3.12.10-slim AS base</code></pre>
+<p>via <a
+href="https://github.com/The-PR-Agent/pr-agent/blob/009ba5a116c4d3273368a6dc53a4efdb7904d519/Dockerfile.github_action#L1">Dockerfile.github_action#L1</a></p>
+<p>Dockerレジストリのタグは上書き可能であり、悪意あるバージョンのDocker
+ベースイメージが使用される可能性がある。</p>
+<p>ref. <a
+href="https://docs.docker.com/build/building/best-practices/#pin-base-image-versions">Building
+best practices | Docker Docs</a></p>
+<h2 id="2-pip-installをhash-checking-modeで実行していない">2. pip
+installをHash-checking Modeで実行していない</h2>
+<p>前述のDockerfileではpip installしているが、それに
+<code>--require-hashes</code>
+オプションが付与されておらず、requirements.txtの各依存ライブラリにも
+<code>--hash</code> オプションが付与されていないため、<a
+href="https://www.trendmicro.com/ja_jp/research/26/d/axios-npm-package-compromised.html">Axiosのnpmパッケージ侵害</a>のようなパッケージ侵害の影響を受ける可能性がある。</p>
+<p>via <a
+href="https://github.com/The-PR-Agent/pr-agent/blob/009ba5a116c4d3273368a6dc53a4efdb7904d519/Dockerfile.github_action#L6-L8">Dockerfile.github_action#L6-L8</a></p>
+<h2 id="3-dockerイメージのビルドプロセスが不明瞭">3.
+Dockerイメージのビルドプロセスが不明瞭</h2>
+<p>1,2の対策としてPR-Agentの特定のバージョンを使用する方法がドキュメントに記載されている。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> PR Agent action step</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">id</span><span class="kw">:</span><span class="at"> pragent</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> docker://pragent/pr-agent@sha256:a0b36966ca3a197ca739fa1e65c16703076fc1c744cd423ca203b8c21707d71c</span></span></code></pre></div>
+<p>via <a
+href="https://github.com/The-PR-Agent/pr-agent/blob/009ba5a116c4d3273368a6dc53a4efdb7904d519/SECURITY.md#specific-release-version">SECURITY.md</a></p>
+<p>Dockerイメージのversionはpinningされており一見問題なさそうに見えるが、このDockerイメージのビルドプロセスが不明瞭であり、その妥当性を第三者が検証できない他、image自体の検証もしづらい。</p>
+<p>(同様の問題提起を<a
+href="https://github.com/The-PR-Agent/pr-agent/issues/2306#issuecomment-4304993299">issue
+comment</a>でされている方もいる）</p>
+<h2 id="3rd-party-github-actionsを採用する際の注意点">3rd-party GitHub
+Actionsを採用する際の注意点</h2>
+<p><a
+href="https://github.com/suzuki-shunsuke/pinact">pinact</a>やGitHubのEnforce
+SHA Pinning機能によって、3rd-partyのGitHub
+Actionsを使用する際にpinningすることの重要性は広く普及してきたように思える。</p>
+<p>しかし、GitHub ActionsをpinningしたとしてもそのGitHub
+Actions自体のリスク評価についてはまだ認識が広がっていないように思える。</p>
+<p>3rd-partyのGitHub
+Actionsを採用する際には、自分は以下のように注意している。</p>
+<ul>
+<li>Actions内でプログラムを動的にダウンロードしている場合は、ダウンロードしたプログラムのチェックサム検証をしているか確認する
+<ul>
+<li>実行バイナリやインストールスクリプトなど、悪意ある第三者に上書きされる可能性がある</li>
+</ul></li>
+<li>Actions内でGit
+リモートリポジトリからチェックアウトしている場合は、コミットハッシュ指定しているか確認する
+<ul>
+<li>ブランチやタグ指定されている場合、悪意ある第三者に上書きされる可能性がある</li>
+</ul></li>
+<li>Actions内でパッケージインストールしている場合は、パッケージがpinningされていることを確認する
+<ul>
+<li>最近のパッケージマネージャにはpinningする機能があるはず</li>
+<li>逆説的に言えば、pinning機能を持っていないパッケージマネージャを使用してはいけない</li>
+</ul></li>
+<li>Dockerコンテナを使用したActionの場合は、Dockerイメージのビルドプロセスに透明性があるかを確認する
+<ul>
+<li>プライベートな環境でのビルドの場合、そのビルドが侵害されてないことを証明するのが難しい</li>
+</ul></li>
+</ul>
+<h2 id="まとめ">まとめ</h2>
+<p>3rd-partyのGitHub
+Actionsは気軽に使えて開発生産性に大きく寄与する一方、LLMの発展によりサプライチェーン攻撃などのセキュリティリスクが高まっている現代においては、そのリスクを適切に評価した上でその採用の是非を決定する必要がある。</p>
+<p>...嫌な世の中になってしまったな...</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
