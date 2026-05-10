@@ -1,5 +1,5 @@
 ---
-title: plain-text-accounting
+title: Plain Text Accounting
 date: '2026-05-10'
 published: '2026-05-10'
 ---
