@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>plain-text-accounting - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="plain-text-accounting - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="plain-text-accounting - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>plain-text-accounting</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-05-10</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>資産管理アプリとしてマネーフォワードを使っているんだけど、<a
+href="https://www.itmedia.co.jp/news/articles/2605/07/news096.html">最近のアレコレ</a>
+があって、代替手段を探している。</p>
+<p>ネットバンクやクレカのパスワードを第三者に預けたくない、という気持ちが強かったのでDeep
+Researchで調べていたが、今はそのようなサービスが存在しない、という事実がわかり絶望した。</p>
+<p>セキュリティを犠牲にせずに資産管理をするには、自前でやるしかなさそう、ということで
+<a href="https://plaintextaccounting.org/">Plain Text Accounting</a>
+というアプローチがあることを知ったので、それにチャレンジしてみたい。</p>
+<p>Plain Text Accountingは、plain
+textで複式簿記の台帳を書く、というアプローチ。</p>
+<p><a href="https://ledger-cli.org/doc/ledger3.html">Ledger</a>
+を紐切りに、Haskell製の<a
+href="https://hledger.org/1.52/hledger.html">hledger</a> や <a
+href="https://github.com/beancount/beancount">Beancount</a>
+などのツールがある。</p>
+<p>Beancountを選択する人が多いっぽいのだけれど、CLIコマンドの体系があまり好みではなかったのでやめた。
+Ledgerでも良かったのだけれど、機能が絞り込まれていてとっかかりとして使いやすそう、Goで書かれていて内部の実装が読みやすい、マニュアルが読みやすい、などの理由から<a
+href="https://github.com/howeyc/ledger">howeyc/ledger</a>
+を使ってみようと思う。</p>
+<p>自分が使っているネットバンクやクレカ会社はCSVダウンロードをサポートしているので、howeyc/ledgerのimport機能がサポートしているフォーマットに変換するスクリプト用意すれば良さそう。</p>
+<p>手で集めるのは流石に手間だけど、月1回に支出を振り返るタイミングでちょっと手間をかければいいだけなので、まぁ許容できるかな...
+ChatGPT AgentとかClaude Computer
+useとか使ってもいいかもしれない。（ちょっと抵抗はあるが...）</p>
+<p>仮にCSVダウンロードできない金融機関があったとしても、コピペしてLLMエージェントに渡せばいいし、LLMエージェント自体にGUIを直接操作させてもいいので、だいぶ省力化できる余地が広がった感がある。</p>
+<p>plain
+textに台帳あれば、読み込んで分析したりグラフ作ったりもやろうと思えばできるし、LLMコーディングエージェントのおかげで片手間でも作れそう。</p>
+<p>資産管理アプリのベンダーロックインをこういった形で解決できるのはいいね。</p>
+<p>代わりにLLMコーディングエージェントにロックインされているだけかもしれんけど...</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
