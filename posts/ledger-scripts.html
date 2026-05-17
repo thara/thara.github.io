@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>ledger向けスクリプト作り始めた - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="ledger向けスクリプト作り始めた - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="ledger向けスクリプト作り始めた - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>ledger向けスクリプト作り始めた</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-05-17</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p><a
+href="../2026-05-10-plain-text-accounting.md">先週書いた記事</a>で書いた通り、<a
+href="https://plaintextaccounting.org/">Plain Text
+Accounting</a>のために、<a
+href="https://github.com/howeyc/ledger">howeyc/ledger</a>のimport機能がサポートしているフォーマットに変換するスクリプトをぼちぼち書き始めた。</p>
+<p>howeyc/ledgerがサポートしているフォーマットはこういうの。</p>
+<pre class="csv"><code>Transaction Date,Description,Amount
+01/12/22,Dominoes Pizza     HOUSTON TX,12.34
+01/23/22,Dominoes Pizza     PEARLAND TX,14.34
+01/02/22,Half Price Books   AUSTIN TX,5.24</code></pre>
+<p>各金融機関のWebサイトからエクスポートしたCSVファイルをこれに変換するためのスクリプトを書いた。</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./import-ufj.py</span> <span class="at">--description-map</span> descriptions.csv /path/to/exported.csv <span class="op">&gt;</span> import.csv</span></code></pre></div>
+<p>descriptions.csvは、元データの「取引概要」みたいなのを、ledgerに入れたいDescriptionに変換するためのマッピング情報。</p>
+<p>ledgerには↓のようにimportする。</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ledger</span> <span class="at">-f</span> ledger.bat import UFJ import.csv <span class="op">&gt;&gt;</span> ledger.bat</span></code></pre></div>
+<p>コマンドライン引数に <code>Account</code>
+を設定しないといけないんだけど、元のledgerファイルにその
+<code>Account</code>
+がないと失敗するので、↓のように初期状態を入れておいた。</p>
+<pre><code>2026/04/01 Opening Balances
+    Assets:Bank:UFJ           50000.00
+    Equity:Opening Balances</code></pre>
+<p>importしたら全部 Equity:Opening Balances
+に紐づいてしまったので、まだなんか間違ってそうな気がしないでもないが、とりあえず最初の一歩ということで...</p>
+<p>スクリプトは公開しても良いかな、って思ってたけど、自分が使っている金融機関がモロにバレるので、とりあえず非公開。</p>
+<p>いろんな金融機関のCSVファイルのフォーマットが公開されてれば、片っ端から実装するだけで済むんだけど。</p>
+<p>API連携といい、こういうところでオープンじゃないのが辛いねぇ...</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
