@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>GoでTLS/SSL 証明書 - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="GoでTLS/SSL 証明書 - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="GoでTLS/SSL 証明書 - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>GoでTLS/SSL 証明書</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-06-14</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>前やったような気もするけど、思い出しも兼ねて。</p>
+<p>全体的なフローは、</p>
+<ol type="1">
+<li>ルート証明書作成</li>
+<li>ルート証明書からサーバー証明書作成</li>
+<li>ルート証明書からクライアント証明書作成</li>
+<li>httptest.Serverにサーバー証明書設定</li>
+<li>http.Clientにクライアント証明書設定</li>
+<li>http.Clientからリクエスト</li>
+</ol>
+<p>って感じの流れで動作確認する。</p>
+<h2 id="1-証明書作成">1. 証明書作成</h2>
+<p>subjectは適当</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>    subject <span class="op">:=</span> pkix<span class="op">.</span>Name<span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>        Country<span class="op">:</span>            <span class="op">[]</span><span class="dt">string</span><span class="op">{</span><span class="st">&quot;JP&quot;</span><span class="op">},</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        Organization<span class="op">:</span>       <span class="op">[]</span><span class="dt">string</span><span class="op">{</span><span class="st">&quot;My Organization&quot;</span><span class="op">},</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        OrganizationalUnit<span class="op">:</span> <span class="op">[]</span><span class="dt">string</span><span class="op">{</span><span class="st">&quot;My Unit&quot;</span><span class="op">},</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        Locality<span class="op">:</span>           <span class="op">[]</span><span class="dt">string</span><span class="op">{</span><span class="st">&quot;My City&quot;</span><span class="op">},</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        Province<span class="op">:</span>           <span class="op">[]</span><span class="dt">string</span><span class="op">{</span><span class="st">&quot;&quot;</span><span class="op">},</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        StreetAddress<span class="op">:</span>      <span class="op">[]</span><span class="dt">string</span><span class="op">{</span><span class="st">&quot;&quot;</span><span class="op">},</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        PostalCode<span class="op">:</span>         <span class="op">[]</span><span class="dt">string</span><span class="op">{</span><span class="st">&quot;100-0004&quot;</span><span class="op">},</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        CommonName<span class="op">:</span>         <span class="st">&quot;localhost&quot;</span><span class="op">,</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<p>ルート証明書をこんな感じで作成する。 今回は中間証明書は作らない。</p>
+<pre><code>    serialNumber, err := randomSerialNumber()
+    if err != nil {
+        return nil, fmt.Errorf(&quot;failed to generate serial number: %v&quot;, err)
+    }
+
+    now := time.Now()
+    const rootCAValidYears = 10
+
+    caCert := &amp;x509.Certificate{
+        SerialNumber:          serialNumber,
+        Subject:               subject,
+        NotBefore:             now.Add(-5 * time.Minute),
+        NotAfter:              now.AddDate(rootCAValidYears, 0, 0),
+        IsCA:                  true,
+        KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+        BasicConstraintsValid: true,
+        // Intermediate CAなし
+        MaxPathLen:     0,
+        MaxPathLenZero: true,
+    }</code></pre>
+<p><code>x509.Certificate</code>
+は単なるパラメータオブジェクト的な存在（たぶん）。</p>
+<p>実際の証明書作成は <code>x509.CreateCertificate</code> を使う。</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>    caPrivKey<span class="op">,</span> err <span class="op">:=</span> rsa<span class="op">.</span>GenerateKey<span class="op">(</span>rand<span class="op">.</span>Reader<span class="op">,</span> <span class="dv">4096</span><span class="op">)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to generate CA private key: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    caBytes<span class="op">,</span> err <span class="op">:=</span> x509<span class="op">.</span>CreateCertificate<span class="op">(</span>rand<span class="op">.</span>Reader<span class="op">,</span> caCert<span class="op">,</span> caCert<span class="op">,</span> <span class="op">&amp;</span>caPrivKey<span class="op">.</span>PublicKey<span class="op">,</span> caPrivKey<span class="op">)</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to create CA certificate: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<p>後続処理でPEM形式で扱うので、変換しておく。</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>    caPEM <span class="op">:=</span> <span class="bu">new</span><span class="op">(</span>bytes<span class="op">.</span>Buffer<span class="op">)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> pem<span class="op">.</span>Encode<span class="op">(</span>caPEM<span class="op">,</span> <span class="op">&amp;</span>pem<span class="op">.</span>Block<span class="op">{</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        Type<span class="op">:</span>  <span class="st">&quot;CERTIFICATE&quot;</span><span class="op">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        Bytes<span class="op">:</span> caBytes<span class="op">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">});</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to encode CA certificate to PEM: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    caPrivKeyPEM <span class="op">:=</span> <span class="bu">new</span><span class="op">(</span>bytes<span class="op">.</span>Buffer<span class="op">)</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> pem<span class="op">.</span>Encode<span class="op">(</span>caPrivKeyPEM<span class="op">,</span> <span class="op">&amp;</span>pem<span class="op">.</span>Block<span class="op">{</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        Type<span class="op">:</span>  <span class="st">&quot;RSA PRIVATE KEY&quot;</span><span class="op">,</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>        Bytes<span class="op">:</span> x509<span class="op">.</span>MarshalPKCS1PrivateKey<span class="op">(</span>caPrivKey<span class="op">),</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="op">});</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to encode CA private key to PEM: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<h2 id="2-ルート証明書からサーバー証明書作成">2.
+ルート証明書からサーバー証明書作成</h2>
+<p>まずは <code>x509.Certificate</code> を作る。
+subjectは1のをそのまま使ってる想定。</p>
+<pre><code>    serialNumber, err := randomSerialNumber()
+    if err != nil {
+        return nil, fmt.Errorf(&quot;failed to generate serial number: %v&quot;, err)
+    }
+
+    now := time.Now()
+
+    cert := &amp;x509.Certificate{
+        SerialNumber: serialNumber,
+        Subject:      subject,
+        // 動作確認用
+        DNSNames:    []string{&quot;localhost&quot;},
+        IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+
+        NotBefore: now.Add(-5 * time.Minute),
+        NotAfter:  now.AddDate(1, 0, 0),
+        KeyUsage:  x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+        ExtKeyUsage: []x509.ExtKeyUsage{
+            x509.ExtKeyUsageServerAuth,
+        },
+    }</code></pre>
+<p>DNSNames,
+IPAddressesは動作確認用にローカルにHTTPサーバーを立てるので。
+<code>NotBefore</code>
+はちょっとだけ過去のにしておかないと、クライアント/サーバー間で時刻ズレがあった時に作成直後の証明書が使えないことがある。まぁ今回の動作確認程度では問題にならないと思うけど。</p>
+<p>KeyUsage, ExtKeyUsageもサーバー証明書としての設定。</p>
+<p>そのあとは、おんなじ感じでx509.CreateCertificateを使って証明書を作成する。</p>
+<p>クライアント証明書も同じように作成するので、↓のような関数を用意した。
+今回は<code>parent</code> にルート証明書を指定する想定。</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> Certificate <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    Certificate <span class="op">*</span>x509<span class="op">.</span>Certificate</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    PrivateKey  <span class="op">*</span>rsa<span class="op">.</span>PrivateKey</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    PEM           <span class="op">*</span>bytes<span class="op">.</span>Buffer</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    PrivateKeyPEM <span class="op">*</span>bytes<span class="op">.</span>Buffer</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> generateCertificate<span class="op">(</span>parent <span class="op">*</span>Certificate<span class="op">,</span> cert <span class="op">*</span>x509<span class="op">.</span>Certificate<span class="op">)</span> <span class="op">(*</span>Certificate<span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    certPrivKey<span class="op">,</span> err <span class="op">:=</span> rsa<span class="op">.</span>GenerateKey<span class="op">(</span>rand<span class="op">.</span>Reader<span class="op">,</span> <span class="dv">4096</span><span class="op">)</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to generate certificate private key: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    certBytes<span class="op">,</span> err <span class="op">:=</span> x509<span class="op">.</span>CreateCertificate<span class="op">(</span>rand<span class="op">.</span>Reader<span class="op">,</span> cert<span class="op">,</span> parent<span class="op">.</span>Certificate<span class="op">,</span> <span class="op">&amp;</span>certPrivKey<span class="op">.</span>PublicKey<span class="op">,</span> parent<span class="op">.</span>PrivateKey<span class="op">)</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to create certificate: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    certPEM <span class="op">:=</span> <span class="bu">new</span><span class="op">(</span>bytes<span class="op">.</span>Buffer<span class="op">)</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> pem<span class="op">.</span>Encode<span class="op">(</span>certPEM<span class="op">,</span> <span class="op">&amp;</span>pem<span class="op">.</span>Block<span class="op">{</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        Type<span class="op">:</span>  <span class="st">&quot;CERTIFICATE&quot;</span><span class="op">,</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>        Bytes<span class="op">:</span> certBytes<span class="op">,</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    <span class="op">});</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to encode certificate to PEM: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    certPrivKeyPEM <span class="op">:=</span> <span class="bu">new</span><span class="op">(</span>bytes<span class="op">.</span>Buffer<span class="op">)</span></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> pem<span class="op">.</span>Encode<span class="op">(</span>certPrivKeyPEM<span class="op">,</span> <span class="op">&amp;</span>pem<span class="op">.</span>Block<span class="op">{</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        Type<span class="op">:</span>  <span class="st">&quot;RSA PRIVATE KEY&quot;</span><span class="op">,</span></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>        Bytes<span class="op">:</span> x509<span class="op">.</span>MarshalPKCS1PrivateKey<span class="op">(</span>certPrivKey<span class="op">),</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">});</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to encode certificate private key to PEM: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">&amp;</span>Certificate<span class="op">{</span>Certificate<span class="op">:</span> cert<span class="op">,</span> PrivateKey<span class="op">:</span> certPrivKey<span class="op">,</span> PEM<span class="op">:</span> certPEM<span class="op">,</span> PrivateKeyPEM<span class="op">:</span> certPrivKeyPEM<span class="op">},</span> <span class="ot">nil</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h2 id="3-ルート証明書からクライアント証明書作成">3.
+ルート証明書からクライアント証明書作成</h2>
+<p>サーバー証明書とほぼ同じ。</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>    serialNumber<span class="op">,</span> err <span class="op">:=</span> randomSerialNumber<span class="op">()</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to generate serial number: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    now <span class="op">:=</span> time<span class="op">.</span>Now<span class="op">()</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    cert <span class="op">:=</span> <span class="op">&amp;</span>x509<span class="op">.</span>Certificate<span class="op">{</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        SerialNumber<span class="op">:</span> serialNumber<span class="op">,</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        Subject<span class="op">:</span>      subject<span class="op">,</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>        NotBefore<span class="op">:</span>    now<span class="op">.</span>Add<span class="op">(-</span><span class="dv">5</span> <span class="op">*</span> time<span class="op">.</span>Minute<span class="op">),</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        NotAfter<span class="op">:</span>     now<span class="op">.</span>AddDate<span class="op">(</span><span class="dv">1</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="dv">0</span><span class="op">),</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>        KeyUsage<span class="op">:</span>     x509<span class="op">.</span>KeyUsageDigitalSignature<span class="op">,</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>        ExtKeyUsage<span class="op">:</span> <span class="op">[]</span>x509<span class="op">.</span>ExtKeyUsage<span class="op">{</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            x509<span class="op">.</span>ExtKeyUsageClientAuth<span class="op">,</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">},</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<p>クライアント証明書の用途的に<code>KeyUsage</code> に
+<code>x509.KeyUsageKeyEncipherment</code> はいらんやろ...</p>
+<h2 id="4-httptestserverにサーバー証明書設定">4.
+httptest.Serverにサーバー証明書設定</h2>
+<p>こっからが動作確認のためのフェーズ。</p>
+<p>あらかじめ、tls.Configを作っておく。</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>    certPool <span class="op">:=</span> x509<span class="op">.</span>NewCertPool<span class="op">()</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    certPool<span class="op">.</span>AppendCertsFromPEM<span class="op">(</span>certs<span class="op">.</span>CA<span class="op">.</span>PEM<span class="op">.</span>Bytes<span class="op">())</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    serverTLSCert<span class="op">,</span> err <span class="op">:=</span> tls<span class="op">.</span>X509KeyPair<span class="op">(</span>certs<span class="op">.</span>Server<span class="op">.</span>PEM<span class="op">.</span>Bytes<span class="op">(),</span> certs<span class="op">.</span>Server<span class="op">.</span>PrivateKeyPEM<span class="op">.</span>Bytes<span class="op">())</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to create server TLS certificate: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    serverTLSConf <span class="op">:=</span> <span class="op">&amp;</span>tls<span class="op">.</span>Config<span class="op">{</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        Certificates<span class="op">:</span> <span class="op">[]</span>tls<span class="op">.</span>Certificate<span class="op">{</span>serverTLSCert<span class="op">},</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">// for mTLS</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        ClientCAs<span class="op">:</span>  certPool<span class="op">,</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        ClientAuth<span class="op">:</span> tls<span class="op">.</span>RequireAndVerifyClientCert<span class="op">,</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    clientTLSCert<span class="op">,</span> err <span class="op">:=</span> tls<span class="op">.</span>X509KeyPair<span class="op">(</span>certs<span class="op">.</span>Client<span class="op">.</span>PEM<span class="op">.</span>Bytes<span class="op">(),</span> certs<span class="op">.</span>Client<span class="op">.</span>PrivateKeyPEM<span class="op">.</span>Bytes<span class="op">())</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to create client TLS certificate: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    clientTLSConf <span class="op">:=</span> <span class="op">&amp;</span>tls<span class="op">.</span>Config<span class="op">{</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>        RootCAs<span class="op">:</span> certPool<span class="op">,</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        <span class="co">// for mTLS</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>        Certificates<span class="op">:</span> <span class="op">[]</span>tls<span class="op">.</span>Certificate<span class="op">{</span>clientTLSCert<span class="op">},</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<p>serverTLSConfのClientCAs,
+ClientAuth、clientTLSConfのCertificatesはmTLSのため。不要であればフィールドを設定しなくていい。</p>
+<p>で、httptest.Serverを適当に起動する。</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>    server <span class="op">:=</span> httptest<span class="op">.</span>NewUnstartedServer<span class="op">(</span>http<span class="op">.</span>HandlerFunc<span class="op">(</span><span class="kw">func</span><span class="op">(</span>w http<span class="op">.</span>ResponseWriter<span class="op">,</span> r <span class="op">*</span>http<span class="op">.</span>Request<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>        fmt<span class="op">.</span>Fprintln<span class="op">(</span>w<span class="op">,</span> <span class="st">&quot;success!&quot;</span><span class="op">)</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="op">}))</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    server<span class="op">.</span>TLS <span class="op">=</span> serverTLSConf</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    server<span class="op">.</span>StartTLS<span class="op">()</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> server<span class="op">.</span>Close<span class="op">()</span></span></code></pre></div>
+<h2 id="5-httpclientにクライアント証明書設定">5.
+http.Clientにクライアント証明書設定</h2>
+<p>4で作ったのをそのまま使うだけ。</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>    client <span class="op">:=</span> <span class="op">&amp;</span>http<span class="op">.</span>Client<span class="op">{</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>        Transport<span class="op">:</span> <span class="op">&amp;</span>http<span class="op">.</span>Transport<span class="op">{</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>            TLSClientConfig<span class="op">:</span> clientTLSConf<span class="op">,</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>        <span class="op">},</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span></code></pre></div>
+<h2 id="6-httpclientからリクエスト">6. http.Clientからリクエスト</h2>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>    resp<span class="op">,</span> err <span class="op">:=</span> client<span class="op">.</span>Get<span class="op">(</span>server<span class="op">.</span>URL<span class="op">)</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to make request: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    b<span class="op">,</span> err <span class="op">:=</span> io<span class="op">.</span>ReadAll<span class="op">(</span>resp<span class="op">.</span>Body<span class="op">)</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to read response body: %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    body <span class="op">:=</span> strings<span class="op">.</span>TrimSpace<span class="op">(</span><span class="dt">string</span><span class="op">(</span>b<span class="op">[:]))</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    fmt<span class="op">.</span>Printf<span class="op">(</span><span class="st">&quot;Response: %s</span><span class="ch">\n</span><span class="st">&quot;</span><span class="op">,</span> body<span class="op">)</span></span></code></pre></div>
+<p>こんな感じかな。 ソースコードは <a
+href="https://github.com/thara-playground/go-ca-playground">thara-playground/go-ca-playground</a>
+に置いてある。(自分が理解しやすいようにリファクタリング済み)</p>
+<p>普段ゴリゴリに使うパッケージじゃないから、ちょこちょこ忘れてた。</p>
+<p>こういうPKIの一連の流れをシュッと確認できるのは、Goのいいところかもしれない。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
