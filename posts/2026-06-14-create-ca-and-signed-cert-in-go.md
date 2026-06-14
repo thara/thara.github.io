@@ -1,5 +1,5 @@
 ---
-title: GoでTLS/SSL 証明書
+title: GoでCAと署名付き証明書を作る
 date: '2026-06-14'
 published: '2026-06-14'
 ---
