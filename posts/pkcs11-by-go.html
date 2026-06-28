@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>GoからPKCS#11を使う - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="GoからPKCS#11を使う - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="GoからPKCS#11を使う - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>GoからPKCS#11を使う</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-06-28</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>自社で提供している <a
+href="https://manual.sakura.ad.jp/cloud/appliance/cloudhsm/index.html">クラウドHSM</a>
+について、何も知らなかったのでちょっと調べた。</p>
+<p>Thales(タレス)社提供のHSMを使っている模様(<a
+href="https://manual.sakura.ad.jp/cloud/appliance/cloudhsm/index.html#id12">公開情報</a>)</p>
+<p><a
+href="https://cpl.thalesgroup.com/encryption/hardware-security-modules">Hardware
+Security Modules (HSMs) | Thales</a></p>
+<p>AWSとか、Google
+Cloudとかにもあるみたい？今まで使ったことなかったから知らなかった。</p>
+<ul>
+<li><a
+href="https://docs.aws.amazon.com/cloudhsm/latest/APIReference/Welcome.html">AWS
+CloudHSM</a></li>
+<li><a href="https://docs.cloud.google.com/kms/docs/hsm">Cloud
+HSM</a></li>
+<li><a href="https://learn.microsoft.com/ja-jp/azure/cloud-hsm/">Azure
+Cloud HSM</a></li>
+</ul>
+<p>証明書の保存のためには<a
+href="https://docs.oasis-open.org/pkcs11/pkcs11-base/v2.40/os/pkcs11-base-v2.40-os.html">PKCS
+#11</a> というAPI を使うっぽい。</p>
+<p>PKCS#11はC
+APIだが、幸いなことにThalesがGoのwrapperライブラリを提供してくれていた。</p>
+<p><a href="https://github.com/ThalesGroup/pkcs11">ThalesGroup/pkcs11:
+pkcs11 wrapper for Go</a></p>
+<p>ただ、このライブラリはPKCS#11をGoから使えるようにするためだけのものらしく、Goの
+<a href="https://pkg.go.dev/crypto/x509">crypto/x509 パッケージ</a>
+で使うためには、 <a
+href="https://github.com/thales-transfer/crypto11">thales-transfer/crypto11</a>
+を使ってくれとのこと。</p>
+<p><a href="https://github.com/thales-transfer">thales-transfer</a>
+というorgが、先のThales社とどういう関係なのかはわからなかった。 <a
+href="https://github.com/ThalesGroup">Thales Group</a>
+に移行予定っぽいけど、どういうロードマップで移行していくかも不明。</p>
+<p><a
+href="https://github.com/ThalesGroup/pkcs11">ThalesGroup/pkcs11</a>
+のREADMEから直リンクされているが...</p>
+<p>ちなみに <a
+href="https://github.com/thales-transfer/crypto11">thales-transfer/crypto11</a>
+からは<a
+href="https://github.com/ThalesGroup/pkcs11">ThalesGroup/pkcs11</a>ではなく、<a
+href="https://github.com/miekg/pkcs11">miekg/pkcs11</a>
+が使われていた。</p>
+<p>どういうこと...</p>
+<p><a
+href="https://github.com/ThalesGroup/pkcs11">ThalesGroup/pkcs11</a> は
+<a href="https://github.com/miekg/pkcs11">miekg/pkcs11</a>
+をforkしているが、後者の方がメンテされているので、以下のような方針で採用するのが良さそう。</p>
+<ul>
+<li>単純にPKCS#11をGoから使いたい場合は <a
+href="https://github.com/miekg/pkcs11">miekg/pkcs11</a></li>
+<li>PKCS#11 をサポートした <a
+href="https://pkg.go.dev/crypto/x509">crypto/x509 パッケージ</a>
+の実装を使いたい場合は <a
+href="https://github.com/thales-transfer/crypto11">thales-transfer/crypto11</a></li>
+</ul>
+<p>Thalesグループの組織変更とかそういう影響を受けたのかわからないけど、thales-transfer
+orgとかよくわからないものがあるのは、特にセキュリティ関係だと不安感が増す。</p>
+<p>ので、なんかシュッとしてほしい...</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
