@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>モノレポのディレクトリ構成のいけすかなさ - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="モノレポのディレクトリ構成のいけすかなさ - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="モノレポのディレクトリ構成のいけすかなさ - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>モノレポのディレクトリ構成のいけすかなさ</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-07-05</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>最近は特に、アプリケーション作るときにモノレポを採用することが増えているように思う。</p>
+<p>バックエンド実装やTerraformなどのIaC、Webフロントエンドまで。</p>
+<p>それ自体は個人的に望ましいと思っているのだけれど、困るのはそのディレクトリ構成。
+普通にやると、<code>backend/infrastructure/frontend</code>
+とか、<code>server/unity/web</code>
+とか、みたいな構成になるかもしれない。</p>
+<p>でも個人的に<a
+href="https://blog.cleancoder.com/uncle-bob/2011/09/30/Screaming-Architecture.html">Screaming
+Architecture</a>が望ましいと思っている。</p>
+<p>ので、<code>backend/infrastructure/frontend</code>
+みたいな技術領域で分けられたディレクトリ構成は「叫んでない！」と感じてしまう。</p>
+<p>Go単体であれば、シンプルなアプリケーションなら<a
+href="https://www.calhoun.io/flat-application-structure/">Flat
+Application
+Structure</a>でいいとして、もう少し複雑なアプリケーションなら<a
+href="https://medium.com/sellerapp/golang-project-structuring-ben-johnson-way-2a11035f94bc">こんな感じのコードアーキテクチャ</a>(domain
+packageがrepo root) でいいだろうけど。 <sub><sup> (流石に<a
+href="https://github.com/golang-standards/project-layout">golang-standards/project-layout</a>
+を新規に採用しようとする人はもういないよね)</sup></sub></p>
+<p>これにGo以外のも含めてモノレポにしようとした時には、異なる技術領域が絡み合ってしまう。</p>
+<p>じゃあ技術領域ごとに分けよう、となると、<code>backend/infrastructure/frontend</code>
+みたいな分け方になって、「叫び」を感じられなくなってしまう。</p>
+<p>ソフトウェアに対する認識というか観点といったものは一つではないので、ファイルシステムという1つの木表現に押し込むこと自体がそもそも無理、という話ではある。
+それ前提だと、特定の技術領域は拡張子やパッケージマネージャが求めるディレクトリ構成に強制的に従わざるを得ないので、その強制力が働かないディレクトリ構造においては、技術領域以外の観点で構成した方が良いのではないか、と思うのだが、開発体験とかも含めるとそんなに単純な話ではないよなぁと思ったり。</p>
+<p>ここら辺に、モノレポ採用時のディレクトリ構成のいけすかなさ、みたいなのをどうしても感じてしまう。</p>
+<p>論理的なファイル構成を表現できるツールがあればいいかも？
+でもそれってEclipseとかのIDEが搭載していて、個人的にあんまり嬉しくなかったんだよな...みたいなのもあり、いまだに自分の中の答えはない。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
