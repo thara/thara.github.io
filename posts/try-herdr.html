@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>herdr触った - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="herdr触った - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="herdr触った - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>herdr触った</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-07-26</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>tmux使ってて「ペインの内容、LLMが常に読んで欲しいな〜」って思ってたので、まさにそれを解決してくれそうな
+<a href="https://herdr.dev/">Herdr</a> を触ってみた。</p>
+<p>ドキュメント見たり実際に使ってみたが、tmuxの代わりにメインのterminal
+multiplexerにするためにはちょっと厳しいところがあったのでまとめておく。</p>
+<p>あくまで、個人的に、ね。</p>
+<h2 id="vimとの連携">vimとの連携</h2>
+<p>tmux上ではvimとのペイン移動をシームレスにするために <a
+href="https://github.com/christoomey/vim-tmux-navigator">christoomey/vim-tmux-navigator</a>
+を使っていた。</p>
+<p>herdr では<a
+href="https://github.com/willfish/herdr-navigator">willfish/herdr-navigator</a>
+で同じようなことができそうだったが、エディタ側のプラグインはneovimしか対応していなさそうだった。</p>
+<p>自分はvim使いなので、herdrからの遷移からはできるが、vimからherdrに戻ることができなかった。</p>
+<p>普段、息を吐くようにpane分けたりしているので、結構しんどい。</p>
+<h2 id="コピーモード">コピーモード</h2>
+<p>tmuxではcopy
+modeをviにしていたので、viのキーバインドで範囲選択してyank、みたいなことをしていたが、herdrにはcopy
+modeのキーバインドをシュッとviにする方法がないっぽい...?<br />
+キーバインドを細かく設定すればいけるかもしれないが、ちょっと面倒。</p>
+<hr />
+<p>正直、もっとあるかとは思っていたが意外と少なかった。どちらも対応するのに技術的に不可能なわけではないので、解決しようと思えば解決できる。</p>
+<p>ただ、それほどherdrに思い入れがあるわけではないのと、自分のLLMツールの使い方だとherdr導入によって得られる恩恵あんまり少なさそうなので、一旦はtmuxのままでいいかな。
+herdr使いこなせるようにLLM使いこなせた方がええんちゃうか、と思う気がするが、道具に使われるのは癪なので...。<br />
+自分にとって本当に必要になったその時にherdrを使えばいいかな。</p>
+<p>あ、macOS標準のTerminal.appだとtabとかpaneとかを区切る線がうまく描画されなかったので、そのために<a
+href="https://ghostty.org/">Ghostty</a>を入れたのもネガティブだった。
+いや、いつまでTerminal.appを使い続けてんねん、という話ではあるんだけど。</p>
+<p>今の環境が手に馴染みすぎているのもあるかもしれない。
+でも今の開発環境、ツール、キーバインドからなる指の使い方が最も自分の思考を邪魔せずアウトプットできるんだよなぁ。</p>
+<p>tmuxはこの環境の根幹を成しているので、なかなか切り替えるのは難しそう。</p>
+<p>今回は片手間でherdrを試してみたので、今のままでいいや的な結論になったけど、本格的に移行するとしたら、1週間程度休み取って慣らす、みたいなことが必要かもしれない。</p>
+<p>キー配列を変える時みたいに。</p>
+<p>terminal
+multiplexerを変える、ということは自分にとってそれぐらいの覚悟や負担がかかるものだ、というのがわかったのは、良い発見だったかもしれない。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
