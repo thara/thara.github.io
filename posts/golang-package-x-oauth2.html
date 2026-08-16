@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>golang.org/x/oauth2 package - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="golang.org/x/oauth2
+package - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="golang.org/x/oauth2
+package - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>golang.org/x/oauth2 package</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-08-16</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>Go言語には <a href="https://pkg.go.dev/golang.org/x">golang.org/x</a>
+配下で提供されている準標準ライブラリがある。</p>
+<p>この中に <a
+href="https://pkg.go.dev/golang.org/x/oauth2">golang.org/x/oauth2</a>
+があって、OAuth2クライアント周りの実装が置かれている。</p>
+<p>準、とはいえ、OAuth2の実装が標準として提供されているのはGoの良さだよね。</p>
+<p>最近、その中の <a
+href="https://pkg.go.dev/golang.org/x/oauth2@v0.36.0/clientcredentials">golang.org/x/oauth2/clientcredentials</a>
+に気づいた。</p>
+<p>OAuth2.0 Client Credentials Grants
+typeのクライアント周りのあれこれをやってくれて、めちゃ便利。</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">:=</span> clientcredentials<span class="op">.</span>Config<span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    ClientID<span class="op">:</span>     <span class="st">&quot;my-client-id&quot;</span><span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    ClientSecret<span class="op">:</span> <span class="st">&quot;my-client-secret&quot;</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    TokenURL<span class="op">:</span>     <span class="st">&quot;https://auth.example.com/oauth2/token&quot;</span><span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>client <span class="op">:=</span> config<span class="op">.</span>Client<span class="op">(</span>ctx<span class="op">)</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>resp<span class="op">,</span> err <span class="op">:=</span> client<span class="op">.</span>Get<span class="op">(</span><span class="st">&quot;https://api.example.com/resources&quot;</span><span class="op">)</span></span></code></pre></div>
+<p><code>golang.org/x/oauth2/clientcredentials</code>
+パッケージ以外も見てみたら、</p>
+<ul>
+<li><a
+href="https://pkg.go.dev/golang.org/x/oauth2@v0.36.0/amazon">amazon</a></li>
+<li><a
+href="pkg.go.dev/golang.org/x/oauth2@v0.36.0/facebook">facebook</a></li>
+<li><a
+href="https://pkg.go.dev/golang.org/x/oauth2@v0.36.0/gitlab">gitlab</a></li>
+<li><a
+href="https://pkg.go.dev/golang.org/x/oauth2@v0.36.0/fitbit">fitbit</a></li>
+<li><a
+href="https://pkg.go.dev/golang.org/x/oauth2@v0.36.0/paypal">paypal</a></li>
+</ul>
+<p>などなどのOAuthプロバイダごとのpackageがあって、それぞれエンドポイントのURLを<a
+href="https://pkg.go.dev/golang.org/x/oauth2@v0.36.0#Endpoint">oauth2.Endpoint</a>
+で定数定義してあるだけ。<br />
+(var定義なので、やろうと思えば書き換えられるので定数ですらないんだけど...)</p>
+<p>と思ったら、<a
+href="https://pkg.go.dev/golang.org/x/oauth2@v0.36.0/endpoints">golang.org/x/oauth2/endpoints</a>
+ってのもあって、そこにはサービスごとのoauth2.Endpoint定数が鬼のように並んでいた...</p>
+<p><a
+href="https://github.com/golang/oauth2/blob/master/endpoints/endpoints.go">oauth2/endpoints/endpoints.go
+at master · golang/oauth2</a></p>
+<p>いくらbatteries includedっていっても限度があるやろ...
+今は新規にOAuth2プロバイダごとのpackageは作らずにこのoauth2/endpoints
+packageに追記していく方針らしいけど...</p>
+<p>どんな基準で追加されてるんだろう...みたいなのを眺めてたら、<a
+href="https://pkg.go.dev/golang.org/x/oauth2@v0.36.0/cern">golang.org/x/oauth2/cern</a>
+を見つけた。 そう、あのCERN(欧州原子核研究機構)。</p>
+<p>CERNの<a
+href="https://repository.cern/docs/reference/reference/">研究論文とか?オープンデータとか?にアクセスできるAPI</a>がpublicに提供されているみたい。知らなかった。
+まぁ知っていたとして使う機会はなかったと思うけども。</p>
+<p>どういう経緯でこのようにOAuth2プロバイダ固有のエンドポイントが定数として提供されているかわからないけど、こういう発見がたまにあるから、golang.org/x
+packageは面白い。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
