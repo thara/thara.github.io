@@ -6,10 +6,10 @@ Software Engineer, Geek and Dad of twins in Aichi, Japan.
 
 ## Contact
 
+- Personal Website: [thara.dev](https://thara.dev)
 - GitHub: [@thara](https://github.com/thara)
-- Blog: [Tomochika Hara's Blog](https://blog.thara.jp)
-- Twitter: [@zetta1985](https://twitter.com/zetta1985)
-- Twitch: [tharadev](https://twitch.tv/tharadev)
+- X: [@zetta1985](https://x.com/zetta1985)
+- Bluesky: [@thara.jp](https://bsky.app/profile/thara.jp)
 - LinkedIn: [Tomochika Hara](https://www.linkedin.com/in/tomochikahara/)
 - Keybase: [thara](https://keybase.io/thara)
 

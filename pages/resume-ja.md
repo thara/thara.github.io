@@ -5,8 +5,8 @@ title: 職務経歴書
 原 知愛
 Tomochika Hara
 
+- Personal Website: [thara.dev](https://thara.dev)
 - GitHub: [thara](https://github.com/thara)
-- Blog: [Tomochika Hara's Blog](https://blog.thara.jp)
 - X: [@zetta1985](https://x.com/zetta1985)
 - Bluesky: [@thara.jp](https://bsky.app/profile/thara.jp)
 - LinkedIn: [Tomochika Hara](https://www.linkedin.com/in/tomochikahara/)
