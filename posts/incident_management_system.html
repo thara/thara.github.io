@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Incident Management System - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Incident Management
+System - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Incident Management
+System - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Incident Management System</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-08-23</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>SRE本で紹介されたIncident Command
+System(ICS)は、今ではもはや当たり前になった（よね？）。</p>
+<p>が、肝心の元になった<a
+href="https://www.fema.gov/emergency-managers/nims">FEMA National
+Incident Management System</a>
+(NIMS)について1ミリも知らなかったので、ちょっと調べてみた。</p>
+<p>今まで、システム障害としてインシデント管理にしか触れてこなかったが、改めて<a
+href="https://www.fema.gov/sites/default/files/2020-07/fema_nims_doctrine-2017.pdf">The
+National Incident Management System guides (PDF)</a>
+を読んで印象に残ったこととかシステム障害においてどう考えるかを雑に挙げてみる。</p>
+<h2 id="femaだけの取り組みじゃない">FEMAだけの取り組みじゃない</h2>
+<p>FEMA =
+アメリカ合衆国連邦緊急事態管理庁、なんだけど、てっきり消防だけの取り組みだと思っていた。
+NIMSはそうじゃなくて、警察や医療、政府や自治体、NGOや民間企業などが緊急事態にどう強調するかの標準仕様みたいなものだった。</p>
+<p>システム障害って文脈でICSを取り扱ってきたけど、組織内での緊急事態における標準的なフレームワークとして、もっと普及されてもいいのかもしれない。</p>
+<h2 id="インシデント管理の原則">インシデント管理の原則</h2>
+<p>インシデント担当者は、以下の原則にしたがってNIMSを実施するとのこと。</p>
+<ul>
+<li>Flexibility</li>
+<li>Standardization</li>
+<li>Unity of Effort</li>
+</ul>
+<p>システム障害対応としては、こういうのは社内に閉じてしまいがちだけど、ソフトウェア業界全体のスキルアップ的なことを考えると、ある程度標準化されていた方が良いかもしれない。</p>
+<p>そういえば、こういう企業跨いだ標準化みたいなの、技術領域ではあるけど、ソフトウェア開発・運用組織運営とかの標準みたいなものって、ソフトウェア業界ってあんまないよねぇ...</p>
+<h2 id="incident-command-systemは一部">Incident Command
+Systemは一部</h2>
+<p>NIMSはおおよそ、以下の構造を取っている。</p>
+<ul>
+<li>Resource Management
+<ul>
+<li>Resource Management Preparedness</li>
+<li>Resource Management During an Incident</li>
+<li>Mutual Aid</li>
+</ul></li>
+<li>Command and Coordination
+<ul>
+<li>NIMS Management Characteristics</li>
+<li>Incident Command System (ICS) &lt;- ここ</li>
+<li>Emergency Operations Centers (EOC)</li>
+<li>Multiagency Coordination Group (MAC Group)</li>
+<li>Joint Information System (JIS)</li>
+<li>Interconnectivity of NIMS Command and Coordination Structures</li>
+</ul></li>
+<li>Communications and Information Management
+<ul>
+<li>Communications Management</li>
+<li>Incident Information</li>
+<li>Communications Standards and Formats</li>
+</ul></li>
+</ul>
+<p>見ればわかるように、NIMSの中でIncident Command
+Systemは一部でしかない。</p>
+<p>もちろん、システム障害対応に置いてあまり意味をなさないものもあるかもしれないが、インシデント対応フローなどを社内で規定する際に、これらの何をどう無視
+or
+追加して、何をどこまでカバーするかは考えてみる価値はあるかもしれない。</p>
+<p>というか、そもそもインシデント対応 "フロー"
+を考える前に、インシデント対応に何が必要なのかとか、どういう原則で取り組むのかとか、そこらへんの定義がまず第一に必要であると感じた。</p>
+<h2 id="incident-commander配下のcommand-staff">Incident
+Commander配下のCommand Staff</h2>
+<p>ICSには、Incident
+Commanderの指揮機能を支援するために、以下のようなCommand
+Staffも定義されていた。</p>
+<ul>
+<li>Public Information Officer
+<ul>
+<li>広報担当官</li>
+</ul></li>
+<li>Safety Officer
+<ul>
+<li>安全担当官 (インシデント対応メンバーの "安全")</li>
+</ul></li>
+<li>Liaison Officer
+<ul>
+<li>連絡調整官</li>
+</ul></li>
+</ul>
+<p>Incident
+Commanderは、必要に応じてさらに新規の補佐を任命することもある。</p>
+<p>システム障害フローにおいても、広報担当官的な役割は設けられることがよくありそう。
+レピュテーションリスク対応としてPdMとかが入って、カスタマーサポートとかマーケとかに指示するイメージ。</p>
+<p>一方で、安全担当官みたいなのはあんまり見かけないかも。直接的な身の危険はあまりないかもしれないけど、労務管理的な観点でそういう担当がいても良いかもしれない。</p>
+<p>連絡調整官は、EMとかが務めるイメージ。（そもそもIncident
+CommanderがEMのことも少なくないと思うけど）</p>
+<h2 id="unity-of-command-と-unity-of-effort">Unity of Command と Unity
+of Effort</h2>
+<p>インシデント対応メンバーが単一の指揮官に対して報告するのが、Unity of
+Command。<br />
+複数の指揮系統があると、メンバーの中で優先順位をつけなくてはいけなくなるので、重要。</p>
+<p>インシデント対応メンバーが共通の目標を達成するために調整するのが、Unity
+of Effort。<br />
+こちらも、その時点でのインシデント対応自体の目標が明確に定義され、それが指揮系統に浸透されていることが、重要。</p>
+<h2 id="joint-information-system">Joint Information System</h2>
+<p>外部に対して、適時かつ正確で、入手しやすく、かつ行動につながる情報を提供するために整理されたプロセスや手順、ツールから成るのがJoint
+Information System(JIS)。</p>
+<p>システム障害だと、サービスステータスページとその更新方法とか、対外発信方法などになるだろうか。
+Incident
+Commanderからどのような経路でそういったアウトプットがなされるかがあらかじめ定められているとよさそう。
+複数の経路から発信する場合に、その整合性を保つための仕組みは必要そう。</p>
+<hr />
+<p>パラパラと読んでみたけど、単に「インシデント対応」といっても抽象的なドメインであることがわかった。</p>
+<p>元のFEMA National Incident Management
+Systemは、それこそ災害とかテロ対応とか、そういったレベルのものだけれど、システム障害以外の組織内での緊急事態の対応にも広く展開できそうではある。</p>
+<p>それこそ、元のNIMSは組織の枠を超えた枠組みを提供しているわけで、企業を超えた緊急事態対応の標準フレームワークとして、同じようなものが定義されると良いのではないか。</p>
+<p>どうやってそういうのを進めるのかわからんけど。業界団体的なもの？とかが進めるんかな...</p>
+<p>NIMSでは<a
+href="https://www.fema.gov/sites/default/files/documents/fema_nims-training-program-2020.pdf">トレーニングプログラム</a>とかもあるみたい。
+少なくともICSぐらいは、業界団体的なもの？とかがこういった教育プログラムを通じて、ソフトウェア業界全体に普及していくのがいいのかもしれない。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.jp</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
