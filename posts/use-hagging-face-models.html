@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Hagging Faceのモデルを使って推論 - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Hagging
+Faceのモデルを使って推論 - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Hagging
+Faceのモデルを使って推論 - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Hagging Faceのモデルを使って推論</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-09-06</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>元同僚がHagging Faceのモデル使ってアプリ作ってると聞いて、
+そういえばHagging
+Faceからモデル取ってきて推論するのやってないな、と思ったのでやってみた。</p>
+<p>今更感が半端ないんだけど。</p>
+<p>どうせなので、量子化手法とバックエンドを切り替えたベンチマークも取ってみる。</p>
+<h2 id="hagging-faceからモデル取得">Hagging Faceからモデル取得</h2>
+<p>Hagging FaceのCLIツール <a
+href="https://huggingface.co/docs/huggingface_hub/en/guides/cli">hf</a>
+を使って適当なモデルを取得する。</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> hf download Qwen/Qwen3-0.6B <span class="at">--local-dir</span> models/Qwen3-0.6B</span></code></pre></div>
+<p>ダウンロードしてきたモデルの中身を見てみる</p>
+<pre><code>$ ll -h models/Qwen3-0.6B
+Permissions Size User  Group Date Modified    Name
+drwxr-xr-x     - thara staff 2026-09-05 19:41 .cache
+.rw-r--r--  1.6k thara staff 2026-09-05 19:41 .gitattributes
+.rw-r--r--   11k thara staff 2026-09-05 19:41 LICENSE
+.rw-r--r--   14k thara staff 2026-09-05 19:41 README.md
+.rw-r--r--   726 thara staff 2026-09-05 19:41 config.json
+.rw-r--r--   239 thara staff 2026-09-05 19:41 generation_config.json
+.rw-r--r--  1.7M thara staff 2026-09-05 19:41 merges.txt
+.rw-r--r--  1.5G thara staff 2026-09-05 19:43 model.safetensors
+.rw-r--r--   11M thara staff 2026-09-05 19:41 tokenizer.json
+.rw-r--r--  9.7k thara staff 2026-09-05 19:41 tokenizer_config.json
+.rw-r--r--  2.8M thara staff 2026-09-05 19:41 vocab.json
+
+$ du -sh models/Qwen3-0.6B
+1.4G    models/Qwen3-0.6B
+
+$ ll -h models/Qwen3-0.6B/*.safetensors
+Permissions Size User  Group Date Modified    Name
+.rw-r--r--  1.5G thara staff 2026-09-05 19:43 models/Qwen3-0.6B/model.safetensors
+
+$ cat models/Qwen3-0.6B/config.json
+{
+  &quot;architectures&quot;: [
+    &quot;Qwen3ForCausalLM&quot;
+  ],
+  &quot;attention_bias&quot;: false,
+  &quot;attention_dropout&quot;: 0.0,
+  &quot;bos_token_id&quot;: 151643,
+  &quot;eos_token_id&quot;: 151645,
+  &quot;head_dim&quot;: 128,
+  &quot;hidden_act&quot;: &quot;silu&quot;,
+  &quot;hidden_size&quot;: 1024,
+  &quot;initializer_range&quot;: 0.02,
+  &quot;intermediate_size&quot;: 3072,
+  &quot;max_position_embeddings&quot;: 40960,
+  &quot;max_window_layers&quot;: 28,
+  &quot;model_type&quot;: &quot;qwen3&quot;,
+  &quot;num_attention_heads&quot;: 16,
+  &quot;num_hidden_layers&quot;: 28,
+  &quot;num_key_value_heads&quot;: 8,
+  &quot;rms_norm_eps&quot;: 1e-06,
+  &quot;rope_scaling&quot;: null,
+  &quot;rope_theta&quot;: 1000000,
+  &quot;sliding_window&quot;: null,
+  &quot;tie_word_embeddings&quot;: true,
+  &quot;torch_dtype&quot;: &quot;bfloat16&quot;,
+  &quot;transformers_version&quot;: &quot;4.51.0&quot;,
+  &quot;use_cache&quot;: true,
+  &quot;use_sliding_window&quot;: false,
+  &quot;vocab_size&quot;: 151936
+}</code></pre>
+<p>config.jsonの値とかを参照すればパラメータ数とか算出できるはず。</p>
+<h2 id="ggufに変換">GGUFに変換</h2>
+<p>モデル -&gt; GGUF -&gt; 量子化 -&gt;
+推論という工程を見たいので、自前でやってみる。</p>
+<p>llama.cppをインストールしてセットアップ。</p>
+<pre><code>$ git clone https://github.com/ggml-org/llama.cpp
+$ cd llama.cpp
+
+$ python3 -m venv .venv
+$ source .venv/bin/activate
+
+$ pip install -r requirements.txt</code></pre>
+<p>GGUFに変換。 (ここのf16はtensorの出力データ型の指定）</p>
+<pre><code>$ python convert_hf_to_gguf.py \
+  ../models/Qwen3-0.6B \
+  --outfile ../models/qwen3-f16.gguf \
+  --outtype f16
+...
+INFO:hf-to-gguf:Model successfully exported to ../models/qwen3-f16.gguf
+
+$ ll -h ../models/*.gguf
+Permissions Size User  Group Date Modified    Name
+.rw-r--r--  1.5G thara staff 2026-09-05 19:53 ../models/qwen3-f16.gguf</code></pre>
+<h2 id="量子化">量子化</h2>
+<p>llama.cppに量子化コマンドがあるのでビルドする。
+(別プロセスのvimがカクつくほどめっちゃ重い)</p>
+<pre><code>$ cmake -B build
+$ cmake --build build --config Release -j</code></pre>
+<p>Q4_K_M で量子化。</p>
+<pre><code>$ ./build/bin/llama-quantize \
+  ../models/qwen3-f16.gguf \
+  ../models/qwen3-q4_k_m.gguf \
+  Q4_K_M
+...
+llama_model_quantize_impl: model size  =  1433.75 MiB (16.00 BPW)
+llama_model_quantize_impl: quant size  =   456.11 MiB (5.09 BPW)
+
+llama_quantize: quantize time =  6560.77 ms
+llama_quantize:    total time =  6560.77 ms
+
+$ ls -lh ../models/
+Permissions Size User  Date Modified     Name                                 Permissions Size User  Date Modified     Name
+drwxr-xr-x     - thara 2026-09-05 16:01  .cache                               .rw-r--r--  1.5G thara 2026-09-05 19:53  qwen3-f16.gguf
+drwxr-xr-x     - thara 2026-09-05 19:43  Qwen3-0.6B                           .rw-r--r--  484M thara 2026-09-05 19:59  qwen3-q4_k_m.gguf
+.rw-r--r--  986M thara 2026-09-05 16:03  Qwen2.5-1.5B-Instruct-Q4_K_M.gguf</code></pre>
+<h3 id="llamacppでの推論">llama.cppでの推論</h3>
+<p>試しに量子化したモデルで推論してみる。</p>
+<p>CPU使用:</p>
+<pre><code>$ ./build/bin/llama-cli \
+  -m ../models/qwen3-q4_k_m.gguf \
+  -p &quot;TCPとUDPの違いを説明して&quot;
+...
+[ Prompt: 378.5 t/s | Generation: 140.7 t/s ]</code></pre>
+<p>GPU使用:</p>
+<pre><code>$ ./build/bin/llama-cli \
+  -m ../models/qwen3-q4_k_m.gguf \
+  -ngl 99 \
+  -p &quot;TCPとUDPの違いを説明して&quot;
+...
+&gt; [ Prompt: 361.2 t/s | Generation: 142.6 t/s ]</code></pre>
+<p>PromptはGPUの方が並列化されているので速いが、Generationの方は逐次処理なので影響がないことが分かる。</p>
+<h3 id="パラメータの実態">パラメータの実態</h3>
+<p>パラメータの中身は実際どんなもんだろな、というのが気になったので見てみる。</p>
+<p>以下のようなPythonスクリプトを作る。</p>
+<pre><code>from safetensors import safe_open
+
+path = &quot;models/Qwen3-0.6B/model.safetensors&quot;
+
+total = 0
+
+with safe_open(path, framework=&quot;pt&quot;) as f:
+    for name in f.keys():
+        tensor = f.get_tensor(name)
+        n = tensor.numel()
+        total += n
+        print(f&quot;{name:60} {str(tuple(tensor.shape)):20} {n:,}&quot;)
+
+print()
+print(f&quot;Total: {total:,}&quot;)
+print(f&quot;Total: {total / 1e9:.3f}B&quot;)</code></pre>
+<p>実在するtensorを全部列挙できる。</p>
+<pre><code>$ python3 ./list_params.py
+lm_head.weight                                               (151936, 1024)       155,582,464
+model.embed_tokens.weight                                    (151936, 1024)       155,582,464
+model.layers.0.input_layernorm.weight                        (1024,)              1,024
+model.layers.0.mlp.down_proj.weight                          (1024, 3072)         3,145,728
+model.layers.0.mlp.gate_proj.weight                          (3072, 1024)         3,145,728
+model.layers.0.mlp.up_proj.weight                            (3072, 1024)         3,145,728
+model.layers.0.post_attention_layernorm.weight               (1024,)              1,024
+model.layers.0.self_attn.k_norm.weight                       (128,)               128
+model.layers.0.self_attn.k_proj.weight                       (1024, 1024)         1,048,576
+model.layers.0.self_attn.o_proj.weight                       (1024, 2048)         2,097,152
+model.layers.0.self_attn.q_norm.weight                       (128,)               128
+model.layers.0.self_attn.q_proj.weight                       (2048, 1024)         2,097,152
+model.layers.0.self_attn.v_proj.weight                       (1024, 1024)         1,048,576
+model.layers.1.input_layernorm.weight                        (1024,)              1,024
+model.layers.1.mlp.down_proj.weight                          (1024, 3072)         3,145,728
+model.layers.1.mlp.gate_proj.weight                          (3072, 1024)         3,145,728
+model.layers.1.mlp.up_proj.weight                            (3072, 1024)         3,145,728
+model.layers.1.post_attention_layernorm.weight               (1024,)              1,024
+model.layers.1.self_attn.k_norm.weight                       (128,)               128
+model.layers.1.self_attn.k_proj.weight                       (1024, 1024)         1,048,576
+model.layers.1.self_attn.o_proj.weight                       (1024, 2048)         2,097,152
+model.layers.1.self_attn.q_norm.weight                       (128,)               128
+model.layers.1.self_attn.q_proj.weight                       (2048, 1024)         2,097,152
+model.layers.1.self_attn.v_proj.weight                       (1024, 1024)         1,048,576
+model.layers.10.input_layernorm.weight                       (1024,)              1,024
+model.layers.10.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.10.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.10.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.10.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.10.self_attn.k_norm.weight                      (128,)               128
+model.layers.10.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.10.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.10.self_attn.q_norm.weight                      (128,)               128
+model.layers.10.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.10.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.11.input_layernorm.weight                       (1024,)              1,024
+model.layers.11.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.11.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.11.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.11.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.11.self_attn.k_norm.weight                      (128,)               128
+model.layers.11.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.11.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.11.self_attn.q_norm.weight                      (128,)               128
+model.layers.11.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.11.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.12.input_layernorm.weight                       (1024,)              1,024
+model.layers.12.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.12.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.12.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.12.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.12.self_attn.k_norm.weight                      (128,)               128
+model.layers.12.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.12.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.12.self_attn.q_norm.weight                      (128,)               128
+model.layers.12.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.12.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.13.input_layernorm.weight                       (1024,)              1,024
+model.layers.13.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.13.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.13.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.13.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.13.self_attn.k_norm.weight                      (128,)               128
+model.layers.13.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.13.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.13.self_attn.q_norm.weight                      (128,)               128
+model.layers.13.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.13.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.14.input_layernorm.weight                       (1024,)              1,024
+model.layers.14.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.14.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.14.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.14.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.14.self_attn.k_norm.weight                      (128,)               128
+model.layers.14.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.14.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.14.self_attn.q_norm.weight                      (128,)               128
+model.layers.14.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.14.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.15.input_layernorm.weight                       (1024,)              1,024
+model.layers.15.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.15.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.15.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.15.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.15.self_attn.k_norm.weight                      (128,)               128
+model.layers.15.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.15.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.15.self_attn.q_norm.weight                      (128,)               128
+model.layers.15.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.15.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.16.input_layernorm.weight                       (1024,)              1,024
+model.layers.16.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.16.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.16.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.16.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.16.self_attn.k_norm.weight                      (128,)               128
+model.layers.16.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.16.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.16.self_attn.q_norm.weight                      (128,)               128
+model.layers.16.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.16.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.17.input_layernorm.weight                       (1024,)              1,024
+model.layers.17.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.17.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.17.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.17.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.17.self_attn.k_norm.weight                      (128,)               128
+model.layers.17.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.17.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.17.self_attn.q_norm.weight                      (128,)               128
+model.layers.17.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.17.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.18.input_layernorm.weight                       (1024,)              1,024
+model.layers.18.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.18.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.18.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.18.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.18.self_attn.k_norm.weight                      (128,)               128
+model.layers.18.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.18.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.18.self_attn.q_norm.weight                      (128,)               128
+model.layers.18.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.18.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.19.input_layernorm.weight                       (1024,)              1,024
+model.layers.19.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.19.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.19.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.19.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.19.self_attn.k_norm.weight                      (128,)               128
+model.layers.19.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.19.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.19.self_attn.q_norm.weight                      (128,)               128
+model.layers.19.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.19.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.2.input_layernorm.weight                        (1024,)              1,024
+model.layers.2.mlp.down_proj.weight                          (1024, 3072)         3,145,728
+model.layers.2.mlp.gate_proj.weight                          (3072, 1024)         3,145,728
+model.layers.2.mlp.up_proj.weight                            (3072, 1024)         3,145,728
+model.layers.2.post_attention_layernorm.weight               (1024,)              1,024
+model.layers.2.self_attn.k_norm.weight                       (128,)               128
+model.layers.2.self_attn.k_proj.weight                       (1024, 1024)         1,048,576
+model.layers.2.self_attn.o_proj.weight                       (1024, 2048)         2,097,152
+model.layers.2.self_attn.q_norm.weight                       (128,)               128
+model.layers.2.self_attn.q_proj.weight                       (2048, 1024)         2,097,152
+model.layers.2.self_attn.v_proj.weight                       (1024, 1024)         1,048,576
+model.layers.20.input_layernorm.weight                       (1024,)              1,024
+model.layers.20.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.20.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.20.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.20.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.20.self_attn.k_norm.weight                      (128,)               128
+model.layers.20.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.20.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.20.self_attn.q_norm.weight                      (128,)               128
+model.layers.20.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.20.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.21.input_layernorm.weight                       (1024,)              1,024
+model.layers.21.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.21.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.21.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.21.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.21.self_attn.k_norm.weight                      (128,)               128
+model.layers.21.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.21.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.21.self_attn.q_norm.weight                      (128,)               128
+model.layers.21.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.21.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.22.input_layernorm.weight                       (1024,)              1,024
+model.layers.22.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.22.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.22.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.22.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.22.self_attn.k_norm.weight                      (128,)               128
+model.layers.22.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.22.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.22.self_attn.q_norm.weight                      (128,)               128
+model.layers.22.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.22.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.23.input_layernorm.weight                       (1024,)              1,024
+model.layers.23.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.23.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.23.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.23.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.23.self_attn.k_norm.weight                      (128,)               128
+model.layers.23.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.23.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.23.self_attn.q_norm.weight                      (128,)               128
+model.layers.23.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.23.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.24.input_layernorm.weight                       (1024,)              1,024
+model.layers.24.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.24.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.24.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.24.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.24.self_attn.k_norm.weight                      (128,)               128
+model.layers.24.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.24.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.24.self_attn.q_norm.weight                      (128,)               128
+model.layers.24.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.24.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.25.input_layernorm.weight                       (1024,)              1,024
+model.layers.25.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.25.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.25.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.25.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.25.self_attn.k_norm.weight                      (128,)               128
+model.layers.25.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.25.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.25.self_attn.q_norm.weight                      (128,)               128
+model.layers.25.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.25.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.26.input_layernorm.weight                       (1024,)              1,024
+model.layers.26.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.26.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.26.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.26.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.26.self_attn.k_norm.weight                      (128,)               128
+model.layers.26.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.26.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.26.self_attn.q_norm.weight                      (128,)               128
+model.layers.26.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.26.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.27.input_layernorm.weight                       (1024,)              1,024
+model.layers.27.mlp.down_proj.weight                         (1024, 3072)         3,145,728
+model.layers.27.mlp.gate_proj.weight                         (3072, 1024)         3,145,728
+model.layers.27.mlp.up_proj.weight                           (3072, 1024)         3,145,728
+model.layers.27.post_attention_layernorm.weight              (1024,)              1,024
+model.layers.27.self_attn.k_norm.weight                      (128,)               128
+model.layers.27.self_attn.k_proj.weight                      (1024, 1024)         1,048,576
+model.layers.27.self_attn.o_proj.weight                      (1024, 2048)         2,097,152
+model.layers.27.self_attn.q_norm.weight                      (128,)               128
+model.layers.27.self_attn.q_proj.weight                      (2048, 1024)         2,097,152
+model.layers.27.self_attn.v_proj.weight                      (1024, 1024)         1,048,576
+model.layers.3.input_layernorm.weight                        (1024,)              1,024
+model.layers.3.mlp.down_proj.weight                          (1024, 3072)         3,145,728
+model.layers.3.mlp.gate_proj.weight                          (3072, 1024)         3,145,728
+model.layers.3.mlp.up_proj.weight                            (3072, 1024)         3,145,728
+model.layers.3.post_attention_layernorm.weight               (1024,)              1,024
+model.layers.3.self_attn.k_norm.weight                       (128,)               128
+model.layers.3.self_attn.k_proj.weight                       (1024, 1024)         1,048,576
+model.layers.3.self_attn.o_proj.weight                       (1024, 2048)         2,097,152
+model.layers.3.self_attn.q_norm.weight                       (128,)               128
+model.layers.3.self_attn.q_proj.weight                       (2048, 1024)         2,097,152
+model.layers.3.self_attn.v_proj.weight                       (1024, 1024)         1,048,576
+model.layers.4.input_layernorm.weight                        (1024,)              1,024
+model.layers.4.mlp.down_proj.weight                          (1024, 3072)         3,145,728
+model.layers.4.mlp.gate_proj.weight                          (3072, 1024)         3,145,728
+model.layers.4.mlp.up_proj.weight                            (3072, 1024)         3,145,728
+model.layers.4.post_attention_layernorm.weight               (1024,)              1,024
+model.layers.4.self_attn.k_norm.weight                       (128,)               128
+model.layers.4.self_attn.k_proj.weight                       (1024, 1024)         1,048,576
+model.layers.4.self_attn.o_proj.weight                       (1024, 2048)         2,097,152
+model.layers.4.self_attn.q_norm.weight                       (128,)               128
+model.layers.4.self_attn.q_proj.weight                       (2048, 1024)         2,097,152
+model.layers.4.self_attn.v_proj.weight                       (1024, 1024)         1,048,576
+model.layers.5.input_layernorm.weight                        (1024,)              1,024
+model.layers.5.mlp.down_proj.weight                          (1024, 3072)         3,145,728
+model.layers.5.mlp.gate_proj.weight                          (3072, 1024)         3,145,728
+model.layers.5.mlp.up_proj.weight                            (3072, 1024)         3,145,728
+model.layers.5.post_attention_layernorm.weight               (1024,)              1,024
+model.layers.5.self_attn.k_norm.weight                       (128,)               128
+model.layers.5.self_attn.k_proj.weight                       (1024, 1024)         1,048,576
+model.layers.5.self_attn.o_proj.weight                       (1024, 2048)         2,097,152
+model.layers.5.self_attn.q_norm.weight                       (128,)               128
+model.layers.5.self_attn.q_proj.weight                       (2048, 1024)         2,097,152
+model.layers.5.self_attn.v_proj.weight                       (1024, 1024)         1,048,576
+model.layers.6.input_layernorm.weight                        (1024,)              1,024
+model.layers.6.mlp.down_proj.weight                          (1024, 3072)         3,145,728
+model.layers.6.mlp.gate_proj.weight                          (3072, 1024)         3,145,728
+model.layers.6.mlp.up_proj.weight                            (3072, 1024)         3,145,728
+model.layers.6.post_attention_layernorm.weight               (1024,)              1,024
+model.layers.6.self_attn.k_norm.weight                       (128,)               128
+model.layers.6.self_attn.k_proj.weight                       (1024, 1024)         1,048,576
+model.layers.6.self_attn.o_proj.weight                       (1024, 2048)         2,097,152
+model.layers.6.self_attn.q_norm.weight                       (128,)               128
+model.layers.6.self_attn.q_proj.weight                       (2048, 1024)         2,097,152
+model.layers.6.self_attn.v_proj.weight                       (1024, 1024)         1,048,576
+model.layers.7.input_layernorm.weight                        (1024,)              1,024
+model.layers.7.mlp.down_proj.weight                          (1024, 3072)         3,145,728
+model.layers.7.mlp.gate_proj.weight                          (3072, 1024)         3,145,728
+model.layers.7.mlp.up_proj.weight                            (3072, 1024)         3,145,728
+model.layers.7.post_attention_layernorm.weight               (1024,)              1,024
+model.layers.7.self_attn.k_norm.weight                       (128,)               128
+model.layers.7.self_attn.k_proj.weight                       (1024, 1024)         1,048,576
+model.layers.7.self_attn.o_proj.weight                       (1024, 2048)         2,097,152
+model.layers.7.self_attn.q_norm.weight                       (128,)               128
+model.layers.7.self_attn.q_proj.weight                       (2048, 1024)         2,097,152
+model.layers.7.self_attn.v_proj.weight                       (1024, 1024)         1,048,576
+model.layers.8.input_layernorm.weight                        (1024,)              1,024
+model.layers.8.mlp.down_proj.weight                          (1024, 3072)         3,145,728
+model.layers.8.mlp.gate_proj.weight                          (3072, 1024)         3,145,728
+model.layers.8.mlp.up_proj.weight                            (3072, 1024)         3,145,728
+model.layers.8.post_attention_layernorm.weight               (1024,)              1,024
+model.layers.8.self_attn.k_norm.weight                       (128,)               128
+model.layers.8.self_attn.k_proj.weight                       (1024, 1024)         1,048,576
+model.layers.8.self_attn.o_proj.weight                       (1024, 2048)         2,097,152
+model.layers.8.self_attn.q_norm.weight                       (128,)               128
+model.layers.8.self_attn.q_proj.weight                       (2048, 1024)         2,097,152
+model.layers.8.self_attn.v_proj.weight                       (1024, 1024)         1,048,576
+model.layers.9.input_layernorm.weight                        (1024,)              1,024
+model.layers.9.mlp.down_proj.weight                          (1024, 3072)         3,145,728
+model.layers.9.mlp.gate_proj.weight                          (3072, 1024)         3,145,728
+model.layers.9.mlp.up_proj.weight                            (3072, 1024)         3,145,728
+model.layers.9.post_attention_layernorm.weight               (1024,)              1,024
+model.layers.9.self_attn.k_norm.weight                       (128,)               128
+model.layers.9.self_attn.k_proj.weight                       (1024, 1024)         1,048,576
+model.layers.9.self_attn.o_proj.weight                       (1024, 2048)         2,097,152
+model.layers.9.self_attn.q_norm.weight                       (128,)               128
+model.layers.9.self_attn.q_proj.weight                       (2048, 1024)         2,097,152
+model.layers.9.self_attn.v_proj.weight                       (1024, 1024)         1,048,576
+model.norm.weight                                            (1024,)              1,024
+
+Total: 751,632,384
+Total: 0.752B</code></pre>
+<p>なるほどわからん。</p>
+<h2 id="ベンチマーク">ベンチマーク</h2>
+<p>使ったモデルに対して、異なる量子化手法を使って量子化する。</p>
+<p>今回は、F16, Q8_0, Q4_K_M を使う。</p>
+<pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+MODEL_DIR=&quot;${1:-../models/Qwen3-0.6B}&quot;
+OUT_DIR=&quot;${2:-../models/gguf}&quot;
+
+MODEL_NAME=&quot;$(basename &quot;$MODEL_DIR&quot;)&quot;
+
+LLAMA_DIR=&quot;$(cd &quot;$(dirname &quot;$0&quot;)&quot; &amp;&amp; pwd)&quot;
+CONVERT=&quot;$LLAMA_DIR/convert_hf_to_gguf.py&quot;
+QUANTIZE=&quot;$LLAMA_DIR/build/bin/llama-quantize&quot;
+
+mkdir -p &quot;$OUT_DIR&quot;
+
+F16=&quot;$OUT_DIR/${MODEL_NAME}-F16.gguf&quot;
+Q8=&quot;$OUT_DIR/${MODEL_NAME}-Q8_0.gguf&quot;
+Q4=&quot;$OUT_DIR/${MODEL_NAME}-Q4_K_M.gguf&quot;
+
+echo &quot;==&gt; Converting Hugging Face model to F16 GGUF&quot;
+python &quot;$CONVERT&quot; &quot;$MODEL_DIR&quot; --outfile &quot;$F16&quot; --outtype f16
+
+echo
+echo &quot;==&gt; Quantizing to Q8_0&quot;
+&quot;$QUANTIZE&quot; &quot;$F16&quot; &quot;$Q8&quot; Q8_0
+
+echo
+echo &quot;==&gt; Quantizing to Q4_K_M&quot;
+&quot;$QUANTIZE&quot; &quot;$F16&quot; &quot;$Q4&quot; Q4_K_M
+
+echo
+echo &quot;==&gt; Done&quot;
+ls -lh &quot;$F16&quot; &quot;$Q8&quot; &quot;$Q4&quot;</code></pre>
+<pre><code>./build-models.sh ../models/Qwen3-0.6B ../models/gguf
+...
+-rw-r--r--  1 thara  staff   1.4G Sep  6 16:17 ../models/gguf/Qwen3-0.6B-F16.gguf
+-rw-r--r--  1 thara  staff   462M Sep  6 16:17 ../models/gguf/Qwen3-0.6B-Q4_K_M.gguf
+-rw-r--r--  1 thara  staff   767M Sep  6 16:17 ../models/gguf/Qwen3-0.6B-Q8_0.gguf</code></pre>
+<p>できたモデルを使って、それぞれCPU/GPUバックエンドでの性能を見てみる。</p>
+<pre><code>#!/usr/bin/env bash
+set -euo pipefail
+
+MODEL_DIR=&quot;${1:-../models/gguf}&quot;
+LLAMA_BENCH=&quot;${LLAMA_BENCH:-./build/bin/llama-bench}&quot;
+
+shopt -s nullglob
+models=(&quot;$MODEL_DIR&quot;/*.gguf)
+
+run_bench() {
+  local model=&quot;$1&quot;
+  local backend=&quot;$2&quot;
+
+  local result
+
+  case &quot;$backend&quot; in
+    CPU)
+      result=&quot;$(&quot;$LLAMA_BENCH&quot; -m &quot;$model&quot; -p 512 -n 128 -r 5 -dev none -ngl 0 -o json 2&gt;/dev/null)&quot;
+      ;;
+
+    Metal)
+      result=&quot;$(&quot;$LLAMA_BENCH&quot; -m &quot;$model&quot; -p 512 -n 128 -r 5 -ngl 99 -o json 2&gt;/dev/null)&quot;
+      ;;
+    *)
+      echo &quot;unknown backend: $backend&quot; &gt;&amp;2
+      exit 1
+      ;;
+  esac
+
+  local prompt
+  local generation
+
+  prompt=&quot;$(
+    jq -r &#39;.[] | select(.n_prompt == 512 and .n_gen == 0) | .avg_ts&#39; &lt;&lt;&lt; &quot;$result&quot;
+  )&quot;
+
+  generation=&quot;$(
+    jq -r &#39;.[] | select(.n_prompt == 0 and .n_gen == 128) | .avg_ts&#39; &lt;&lt;&lt; &quot;$result&quot;
+  )&quot;
+
+  printf &quot;%-32s %-8s %12.1f t/s %14.1f t/s\n&quot; &quot;$(basename &quot;$model&quot;)&quot; &quot;$backend&quot; &quot;$prompt&quot; &quot;$generation&quot;
+}
+
+printf &quot;%-32s %-8s %16s %18s\n&quot; &quot;MODEL&quot; &quot;BACKEND&quot; &quot;PROMPT&quot; &quot;GENERATION&quot;
+printf &quot;%-32s %-8s %16s %18s\n&quot; &quot;--------------------------------&quot; &quot;--------&quot; &quot;----------------&quot; &quot;------------------&quot;
+
+for model in &quot;${models[@]}&quot;; do
+  run_bench &quot;$model&quot; &quot;CPU&quot;
+  run_bench &quot;$model&quot; &quot;Metal&quot;
+done</code></pre>
+<pre><code>[17:18:41] ❯❯❯ ./benchmark-all.sh ../models/gguf
+MODEL                            SIZE       BACKEND  PROMPT           GENERATION
+-------------------------------- ---------- -------- ---------------- ------------------
+Qwen3-0.6B-F16.gguf               1439.4 MB CPU             631.8 t/s           51.4 t/s
+Qwen3-0.6B-F16.gguf               1439.4 MB Metal          2647.4 t/s           70.0 t/s
+Qwen3-0.6B-Q4_K_M.gguf             461.8 MB CPU             554.2 t/s          133.7 t/s
+Qwen3-0.6B-Q4_K_M.gguf             461.8 MB Metal          2233.7 t/s          162.6 t/s
+Qwen3-0.6B-Q8_0.gguf               767.5 MB CPU             690.7 t/s           92.4 t/s
+Qwen3-0.6B-Q8_0.gguf               767.5 MB Metal          2452.5 t/s          111.5 t/s</code></pre>
+<p>ファイルサイズは F16 -&gt; Q8で約53%、F16 -&gt;
+Q4_K_Mで約32%まで縮んでる。 が、Prompt処理速度はGPUバックエンド(Macbook
+AirなのでMetal)のF16が一番早い。
+一方、Generation速度はQ4_K_Mが圧倒的に速い。</p>
+<p>量子化したら計算量が減るんだから全部速くなる、というわけではないことがわかる。
+量子化は「データが小さい」メリットがある一方、圧縮表現を扱うための追加処理もあるため。</p>
+<p>Prompt処理はスループットの影響が大きく、Generationはメモリ帯域の影響が大きい。
+(なので、Generationには量子化が効く)</p>
+<hr />
+<p>大体、実体験としては、こんな感じか。</p>
+<p>次は、onnxあたりを試してみるかな。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.dev</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
