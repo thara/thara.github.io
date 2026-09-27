@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>DigitalOcean Managed Agents - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="DigitalOcean Managed
+Agents - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="DigitalOcean Managed
+Agents - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>DigitalOcean Managed Agents</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-09-27</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>先週、DigitalOceanのManaged AgentsというサービスがPublic
+Previewになった。</p>
+<p><a
+href="https://www.digitalocean.com/blog/managed-agents-public-preview">Introducing
+DigitalOcean Managed Agents: One AI-native stack to power your
+intelligence | DigitalOcean</a></p>
+<p>DigitalOcean自体は結構好きなIaaSだけど、AI関連はあまり追っていなかったので、軽くドキュメント読んだ。</p>
+<p>DigitalOcean Managed Agentsは、まさに <a
+href="./ai-control-plane-as-control-architecture.html">先週の記事</a>で
+書いた「AI Control Plane」だった。</p>
+<p>DigitalOcean Managed
+Agentsは以下の2つのコンポーネントで構成される。</p>
+<ul>
+<li>Harness Runtime</li>
+<li>Action Gateway</li>
+</ul>
+<p>Harness
+Runtimeは、FirecrackerでmicroVMを立ち上げて、AIエージェントを隔離された環境で動作させるやつ。
+人間のapprove待ちとかのアイドル期間は課金されないのが売り、かな。</p>
+<p>Action
+Gatewayは、サードパーティのAPIをwrapして、認証情報をエージェントから分離したりレートリミット管理やリトライなどをしてくれるやつ。
+これは <a href="https://arxiv.org/abs/2505.06817">Control Plane as a
+Tool: A Scalable Design Pattern for Agentic AI Systems</a>
+そのままな感。</p>
+<p>これ以外にも、今後追加されるサービスとしては以下のようなものがある。</p>
+<ul>
+<li>Insights: エージェントやツール利用の観測</li>
+<li>Signals: 評価や強化学習のためのフィードバック</li>
+</ul>
+<p><a
+href="https://www.digitalocean.com/blog/why-we-built-managed-agents">The
+agent-first cloud: why we built Managed Agents | DigitalOcean</a>
+では、AI時代のクラウドとして新たな価値を提供しようと攻勢を取っているのが見て取れる。</p>
+<p>今後のDigitalOceanの動向が楽しみ。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.dev</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
