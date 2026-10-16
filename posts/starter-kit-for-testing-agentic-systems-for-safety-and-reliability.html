@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Starter Kit for Testing Agentic Systems for Safety and
+Reliability - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Starter Kit for Testing Agentic Systems
+for Safety and Reliability - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Starter Kit for Testing Agentic
+Systems for Safety and Reliability - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Starter Kit for Testing Agentic Systems for Safety and
+Reliability</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-10-16</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>10/14に、シンガポールIMDA(情報通信メディア開発局)
+が、エージェントシステムの安全性・信頼性のテストのためのスターターキットとやらを公開していた。</p>
+<p><a
+href="https://www.straitstimes.com/singapore/singapore-launches-new-tool-kit-to-help-firms-test-ai-agents-for-safety-and-reliability?utm_source=chatgpt.com">Singapore
+launches toolkit to help firms test AI agents | The Straits
+Times</a></p>
+<p>IMDAが立ち上げたAI Verify
+Foundationというオープンソースコンソーシアムから、「Starter Kit for
+Testing Agentic Systems for Safety and
+Reliability」と題して配布されていた。</p>
+<p><a
+href="https://www.imda.gov.sg/assets/603572eb-724a-46cf-ac12-14fe38e1558c.pdf">Starter
+Kit for Testing Agentic Systems for Safety and Reliability - Version
+1.0</a> (PDF) (<a
+href="https://aiverifyfoundation.sg/resources/">Resources – AI Verify
+Foundation</a> に導線がある)</p>
+<p>エージェントを使ったシステムのうち、以下の代表的な2つのタイプに対して、どう安全性・信頼性のテストをすれば良いかが記載されている。</p>
+<ul>
+<li>Workflow automation
+<ul>
+<li>あらかじめ定められた手順に沿ってエージェントがタスクを実行するモデル</li>
+</ul></li>
+<li>Goal-oriented
+<ul>
+<li>エージェントが計画を立てて、柔軟にタスクを実行するモデル</li>
+</ul></li>
+</ul>
+<p>(これ以上の柔軟性、自律性を持ったエージェントシステムはスコープ外)</p>
+<p>エージェントシステムの安全性・信頼性テスト、といっても基本はソフトウェアのそれと大枠は変わらないが、以下の4ステップのうち特徴的なのは3,
+4あたりだろうか。</p>
+<ol type="1">
+<li>リスクの特定</li>
+<li>テスト設計</li>
+<li>テストの実行とログ分析</li>
+<li>継続監視・再テスト</li>
+</ol>
+<p>エージェントシステムは複数のコンポーネントからなるので、安全性・信頼性テストにおいても、そのコンポーネント単位とE2Eでテストした方が良いとのこと。マルチエージェントシステムの場合においては、個々のエージェントとエージェントクラスタ全体も同様。</p>
+<p>ログ(Trajectory
+っていうらしい)を分析することで、エージェントの行動要因を分析し、ツールやハーネスなどのどこに不具合があったかを特定することができる。また、インシデント発生時のエビデンスにもなる。</p>
+<p>また、モデルの更新やツールやハーネスなどの環境によって挙動が変化する可能性があるため、従来の安全性・信頼性テストよりも、定期的に行うことの重要性が高い。
+先述のTrajectoryやトレーシングを通じて、可観測性を高く保つことも同様。</p>
+<p>しかし、当然、限界はある。</p>
+<p>「Starter Kit for Testing Agentic Systems for Safety and Reliability
+- Version 1.0」では、課題として以下が挙げられている。</p>
+<ul>
+<li>自律性が高いエージェントでは、事前に全実行経路をテストできない
+<ul>
+<li>エッジケース、リスクシナリオと障害パターンの組み合わせが膨大</li>
+</ul></li>
+<li>大量のTrajectoryを自動評価する技術は、まだ十分に成熟していない
+<ul>
+<li>膨大 &amp; 複雑なTrajectoryの評価に課題</li>
+</ul></li>
+<li>大規模なテストにコストがかかる
+<ul>
+<li>多くの計算リソース、トークン消費量、ツール使用コスト</li>
+</ul></li>
+<li>長時間実行するエージェントの挙動の予測が困難
+<ul>
+<li>施行を重ね、コンテキストが拡大するにつれてTrajectoryが膨大になり可観測性の難易度も上がる</li>
+</ul></li>
+<li>人間による監視の限界
+<ul>
+<li>レビューコスト、決断疲れ</li>
+</ul></li>
+</ul>
+<p>大枠の考え方は似てるにしても、今までのソフトウェアの安全性・信頼性テストにはなかった課題が少なくはない。</p>
+<p>モデルの進化もいいけど、より自律的なエージェントを社会的に実現させるためには、こういう安全性・信頼性とかハーネスとかポリシーとか、そこらへんの問題は避けて通れない。</p>
+<p>まさに今、研究が進められている領域で面白い、ね。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.dev</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
