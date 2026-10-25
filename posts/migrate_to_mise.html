@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>dotfiles管理をmiseに移行した - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="dotfiles管理をmiseに移行した - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="dotfiles管理をmiseに移行した - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>dotfiles管理をmiseに移行した</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-10-25</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p><a
+href="https://blog.shibayu36.org/entry/2026/10/13/173000">私物Macと仕事Macのdotfilesとアプリ管理をmise
+bootstrapで管理しやすくした - $shibayu36-&gt;blog;</a> を参考に、
+今まで<a href="https://www.gnu.org/software/stow/">GNU
+Stow</a>でやってたdotfiles管理を<a
+href="https://mise.jdx.dev/bootstrap.html">mise
+bootstrap</a>に移行した。</p>
+<p>元々、以下のようなStow用に（Stowにおける）パッケージごとにディレクトリ切ってた。</p>
+<ul>
+<li>agents</li>
+<li>config</li>
+<li>etc</li>
+<li>git</li>
+<li>macos</li>
+<li>shell</li>
+<li>vim</li>
+</ul>
+<p>miseでもこれを踏襲して、それぞれを<a
+href="https://mise.jdx.dev/dotfiles/groups.html">dotfile_groups</a>
+にした。</p>
+<p>こういうの。</p>
+<pre><code>[dotfile_groups.shell]
+root = &quot;shell&quot;
+target = &quot;~&quot;
+mode = &quot;symlink-each&quot;
+
+[dotfile_groups.vim]
+root = &quot;vim&quot;
+target = &quot;~&quot;
+(略)</code></pre>
+<p>なので、移行内容としてはmiseの設定ファイルを置いたり、移行用のスクリプトを用意するだけで済んだ。</p>
+<p>どちらもLLM任せ。いやー、いい時代ですね。</p>
+<p>ツールのバージョンとかもasdf使ってたけど、miseに移行して良いかも。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.dev</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
