@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>herdrをセットアップした - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="herdrをセットアップした - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="herdrをセットアップした - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>herdrをセットアップした</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-11-01</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>最近、以下のようなポストをちらほら見て、最近自分の課題感もあって、自分もherdr真面目にセットアップするか、と重い腰を上げた。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">ここ1ヶ月くらいはChief of Staff というか、自分が常に話しかけるエージェントを1個おいて、これはずっと同じセッションで動いている（たまに /compact する）、必要な仕事は herdr で他のエージェントを立ち上げて元のエージェントは全部それを把握してる、みたいにしててとてもよい #rebuildfm https://t.co/8bkLPyL519</p>&mdash; Tatsuhiko Miyagawa (@miyagawa) <a href="https://x.com/miyagawa/status/2113515792948158772?ref_src=twsrc%5Etfw">October 23, 2026</a></blockquote>
+<script async src="https://platform.x.com/widgets.js" charset="utf-8"></script>
+
+<blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:fuqczowdfxvncehn5iu65hus/app.bsky.feed.post/3myu377v3qv2i" data-bluesky-cid="bafyreiflyowtzggdcrnzlnjet7ugeyquskgfr4uxl6ldvvxd2vmndgtdwe" data-bluesky-embed-color-mode="system"><p lang="">ツールが働き方を変える、ということを改めて実感している。GitとGitHubでも働き方は大きく変わってた訳だし、結局今の形にすぐ慣れていくもんだなー。herdrに慣れてからエージェントの並列数が大きく変化したし、合わせて同時進行で複数作業するのにも割と慣れてきた。</p>&mdash; joker1007 (<a href="https://bsky.app/profile/did:plc:fuqczowdfxvncehn5iu65hus?ref_src=embed">@joker1007.net</a>) <a href="https://bsky.app/profile/did:plc:fuqczowdfxvncehn5iu65hus/post/3myu377v3qv2i?ref_src=embed">October 27, 2026 at 7:55 PM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script>
+
+<h2 id="課題感">課題感</h2>
+<p>普段、tmux + OpenCode使って複数タスクをそれぞれでgit
+worktree立ててAgentic Codingしてる。
+大体1タスクごとに、以下のwindow構成になる。</p>
+<ul>
+<li>OpenCode</li>
+<li>bash</li>
+<li>vim (コードレビュー用途）</li>
+</ul>
+<p>(pane分けるのは必要に応じて一時的に作るだけで、普段は1 window 1
+paneでやってる）</p>
+<p>で、今の自分だと3並列ぐらいタスクを回してるんだけど、それぞれのエージェントの状態を把握するのにwindow切り替えて様子見なくちゃいけない。<br />
+OpenCode -&gt; bash -&gt; vim -&gt; OpenCode -&gt; bash -&gt; vim -&gt;
+OpenCode ... ってタブ切り替えするのが煩わしい。</p>
+<p>tmuxのセッションごと1タスクにしてもいいんだけど、タスク以外の仕事もあって、それと並ぶとさらに混乱を及ぼしそう。</p>
+<h2 id="herdrでの解決策">herdrでの解決策</h2>
+<p>ということで、herd使ってworkspace =
+1タスクにしておいて、さらにエージェントの状態も可視化できるようになるし、ある程度なんとかなるんじゃないか、と思って以前使ってみたんだけど、tmuxがあまりにも手に馴染みすぎてしまってそこで手が止まってた。</p>
+<p>上述のpost見て、今度はちゃんとセットアップしてみよ、と思って自分のtmuxの使い勝手をherdrで再現するようにセットアップしてみた。</p>
+<h2 id="herdr設定">herdr設定</h2>
+<p>自分の<a
+href="https://github.com/thara/dotfiles/blob/master/config/.tmux.conf">tmux.conf</a>では色々設定してあるけど、herdrでネックになってたのは以下の設定。</p>
+<ul>
+<li>prefix key
+<ul>
+<li><code>ctrl+q</code> に変更</li>
+</ul></li>
+<li>pane分割方法
+<ul>
+<li>左右分割を <code>prefix+|</code> に</li>
+<li>上下分割はデフォルト(<code>prefix+-</code>) のまま</li>
+</ul></li>
+<li>タブ作成時に元のペインと同じディレクトリで開く
+<ul>
+<li><code>[terminal]</code> の <code>new_cwd</code> に
+<code>"follow"</code> を設定</li>
+</ul></li>
+<li>タブ作成時にタブの名前を聞かない
+<ul>
+<li>めっちゃうざかったやつ</li>
+<li><code>[ui]</code> の <code>prompt_new_tab_name</code> に
+<code>false</code> を設定</li>
+</ul></li>
+<li>設定ファイルのリロード
+<ul>
+<li>tmuxでは <code>prefix+r</code></li>
+<li>herdrは <code>prefix+r</code> がリサイズモードなので
+<code>prefix+alt+r</code> に退避（多分使わない）した上で、設定リロードに
+<code>prefix+r</code> を設定</li>
+</ul></li>
+</ul>
+<p>あんまり大したものはなかった...</p>
+<p>これでAgentic
+Codingしてみて、細かいところを調節していく感じかな。</p>
+<p>最初にherdr試した時はtmuxからの置き換えを考えて評価してたんだけど、普段はtmuxで、Agentic
+Codingするときにherdr使う、という方向が良さそうな気がしてきた。</p>
+<p>まぁ、色々試してみる。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.dev</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
