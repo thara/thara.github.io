@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>源内基準 - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="源内基準 - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="源内基準 - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>源内基準</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-11-08</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p>2026-11-06に、デジタル庁から「源内基準」が公開された。</p>
+<p><a
+href="https://www.digital.go.jp/policies/genai/agent-safety-standard">ガバメントAI
+源内においてAI
+エージェント利用環境の提供を開始するとともに、「源内基準」を公表します｜デジタル庁</a></p>
+<p>政府や自治体職員向けに提供されている生成AI基盤「源内」の活用方法や遵守事項を定めたもの。</p>
+<p>この文書自体は政府や自治体職員向けだが、企業などの組織におけるAI活用基準にも転用できそうなものもありそうなので読んでみた。</p>
+<p><a
+href="https://www.digital.go.jp/assets/contents/node/basic_page/field_ref_resources/b033337d-dad1-4493-9316-d929597e4667/9bbaf559/20261020_policies_genai_guideline_02.pdf">ガバメントAI源内
+ガバナンス・セキュリティ・セーフティに関する基準（「源内基準」）</a>
+(PDF)</p>
+<p>色々書いてあったけど自分が注目したのは、「源内」の関係者を以下の3種類に定義した上で、それぞれに対して主要なサービスの利活用方法の指針を与えるだけでなく、考え方にも触れられていたこと。</p>
+<ul>
+<li>利用者:
+<ul>
+<li>源内を使用する政府職員等</li>
+</ul></li>
+<li>管理者:
+<ul>
+<li>各府省庁等における AI 統括責任者（CAIO）</li>
+<li>府省内全体管理組織（PMO：Portfolio Management Office）</li>
+<li>情報システム管理者など</li>
+</ul></li>
+<li>源内開発者
+<ul>
+<li>デジタル庁において源内の企画・開発・提供・運用に携わる職員</li>
+</ul></li>
+</ul>
+<p>企業で考えると、管理者はAI導入した各部署の責任者、源内開発者は自社でAI基盤作っているならその部署、作ってないとしても導入自体に責任持っている部署があると思うので、そこら辺かな？</p>
+<h2 id="利用者に求められること">利用者に求められること</h2>
+<p>利用者には、以下のような姿勢が求められているようだ(自分が気になるところだけpickup)。</p>
+<ul>
+<li>AIを
+<strong>過度に忌避することなく</strong>、積極的に活用すること</li>
+<li>AIの能力を業務改善に活用するための
+<strong>基礎知識・能力を身につける</strong> こと</li>
+<li><strong>AI
+が利用できない場合でも、重要業務を遂行できる能力を維持する</strong>
+こと</li>
+<li>若手職員は、AIを積極的に活用できる一方で、職務遂行に必要な能力や思考力・判断力などを
+<strong>徹底的に身につける</strong> こと</li>
+</ul>
+<p>「AI
+が利用できない場合でも、重要業務を遂行できる能力を維持する」というのは、政府省庁・自治体っぽいなぁと思う。<br />
+(災害時にネットワークインフラが壊滅的な状況で機能しないのは困るもんね）</p>
+<p>他の考え方は（ここに挙げていないのも含め）、企業でもそのまま適用できるものもありそう。</p>
+<p>もちろん、こういった考え方だけではなく、ハルシネーションを前提とした批判的検証をしましょうね、とか、リスクベースアプローチをとりましょうね、とか、個人情報なりトークンマネジメントなりも書いてある。</p>
+<p>あと、特徴的なものは「源内工房」の活用についてだろうか。</p>
+<p>源内工房とは、AIエージェントを自律的に実行できる基盤。<br />
+ただ、これを利用するには源内開発者と管理者から認められた人に限られているらしい。</p>
+<p>おそらくだけど、まだサンドボックスとガードレールが整ってないんじゃないだろうか。いやまぁ、今現在整っている組織自体がほとんどないと思うのでしょうがないと思うけど。</p>
+<p>社内に向けて広くAIを展開するときにも、こういった考え方は大事。</p>
+<h2 id="管理者に求められること">管理者に求められること</h2>
+<p>管理者はこんな感じ。</p>
+<ul>
+<li>源内を適切かつ効果的に利用できる <strong>内部ガバナンス</strong>
+を整備する</li>
+<li>利用者に対し、必要な教育、研修、助言、確認など、源内の適正な利用を確保する</li>
+<li>テナント管理者機能を用いて、利用者を管理、利用費用を把握、利用可能なモデルを管理する</li>
+<li><strong>利用者個人の注意のみに依存せず</strong>、エージェントチャットの利用に関する組織的な統制を行う責任を負う</li>
+<li><strong>利用者個人の注意のみに依存せず</strong>、源内工房の機能及びリスクに応じた組織的な管理体制を整備する責任を負う</li>
+</ul>
+<p>まだサンドボックスとガードレールが整ってないのは前提に、それをカバーする立場として機能させるみたい。これも企業と同じかな。<br />
+教育とか研修とか、そういったものを推進する立場が必要であることは、企業も変わらないだろう。</p>
+<p>テナント管理者機能は、LiteLLMとかに備わっている機能を自分はイメージした。<br />
+(ちなみに資料の中には画面のスクリーンショットが載っている)</p>
+<h2 id="源内開発者に求められること">源内開発者に求められること</h2>
+<p>開発・運用についての当たり前のことを書いてあるので割愛。</p>
+<p>ただ、費用や技術的制約により、開発・ステージング・本番環境に分けられないものを共通環境に置く、と定義していた。
+企業でサードパーティのサービス使う時とか自然にそうなっていると思うんだけど、それも含めて改めて振り返るのも良さそう。</p>
+<h2 id="まとめ">まとめ</h2>
+<p>源内基準をそのまま企業向けに使えないと思うが、AI活用のおける役割の定義や活用できる情報の種別、統制の定義などをする上で、良いテンプレートになるんじゃないかと感じた。</p>
+<p>ただ、AI関連の技術進歩は今までになく早いので、基準をただ作っただけではだめで、その基準を常にアップデートしていく体制も必要。</p>
+<p>単にAIを活用しているポーズを取るだけなのか、それともAIを真に活用できる組織になるかの違いは、こういった点で色濃く出そう。</p>
+<p>その差はどんどん広がっていくんだろうな...</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.dev</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
