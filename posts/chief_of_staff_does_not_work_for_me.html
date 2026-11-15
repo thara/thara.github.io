@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="author" content="Tomochika Hara">
+  <title>Chief of Staffがうまく機能しなかった - thara.dev</title>
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/neat.css">
+  <link rel="stylesheet" type="text/css" href="https://thara.dev/css/custom.css">
+  <meta name="og:title" content="Chief of
+Staffがうまく機能しなかった - thara.dev" />
+  <meta name="og:type" content="article" />
+  <meta name="og:site_name" content="thara.dev" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@zetta1985" />
+  <meta name="twitter:title" content="Chief of
+Staffがうまく機能しなかった - thara.dev" />
+  <meta name="Hatena::Bookmark" content="nocomment" />
+  <link rel="author" href="http://www.hatena.ne.jp/zetta1985/" /></head>
+<body>
+  <header>
+    <h1>Chief of Staffがうまく機能しなかった</h1>
+    <div class="timestamp">
+      <small>published: <time>2026-11-15</time> </small>
+    </div>
+  </header>
+  <div role="main">
+    <article>
+<p><a href="./setup-herdr.html">以前の記事</a> で
+miyagawaさんやjoker1007さんの、Chief of
+Staff（自分と対話するエージェントを1つだけ置いてそいつに子エージェントに指示させる）に取り組むべく、herdrをセットアップしたというのを書いたが、実際に自分がやってみたところ、あまり機能しなかった。</p>
+<p>実際には、1機能実装において、Chief的なエージェントのセッション立ち上げて、サブタスクを子エージェントたちに実装させる、という、miyagawaさんやjoker1007さんの言うChief
+of Staffよりもはるかに規模は小さいものだったのだが。</p>
+<p>自分の環境でどううまくいかなかったか、書いておこうと思う。</p>
+<h2 id="細かい作業を依頼させた時">細かい作業を依頼させた時</h2>
+<p>Chiefエージェントにdesign
+docを読み込ませて、その後計画を立ててもらい、どのような順序でどうPRを作ればいいかを考えてもらった。</p>
+<p>で、並列で取り組めそうなところを並列で子エージェントに依頼させて、さらに依存関係があるタスクはPRを出しつつ、そこからbranch生やしたまた別のbranch（当然herder
+workspace/git
+worktreeも別）で取り組んでもらって...というのをやった。</p>
+<p>それなりにPRを出すところまで自律化できてて、ええやん、って最初は思っていたが、コードレビューするとどうもタスクごとに最適化された変更内容で、タスクごとにファイル（特にテストコード）を量産し、競合を極端に避けようとしている傾向にあることに気づいた。</p>
+<p>タスクに依存関係があるので競合を避けようとするのは問題ないっちゃ問題ないのだが、それによって設計も歪んでしまっていたり、本来この処理を置くべきではないところ（コレをあらかじめ詳細に言語化できていればよかったかもしれないが）にファイルを置いたりと、とにかく修正を重ねた結果、当然のように依存元の変更によって競合しまくってそれを修正するのにトークンを溶かしまくった。</p>
+<p>競合の修正自体はできるが、どの順で解決するかを自分が判断して直させていた（何か変な直し方をされて悪化しそうだったので）が、それが辛すぎたので、全部の変更をいったんまとめて、とりあえずタスクの完了状態まで実装したPR（当然変更量が多い）を作るように路線変更した。</p>
+<p>が、これも別の方向でうまくいかなった。</p>
+<h2 id="まとめて作業させた時">まとめて作業させた時</h2>
+<p>とりあえず、一通り動いてそうなものはできたが、ちゃんとできているか判断するためにまずテストコードを読んだ。</p>
+<p>しかし、あった方がいいけど全体の設計から見るとそのパスにはいかないと分かりきっているものに対しても細かくテストが書かれていて、まとめて依頼した時もこうなるんだな、とだいぶ期待が外れた。</p>
+<p>また、複数マイクロサービスを跨ぐ分散トランザクションの実装(ワークフローっぽいやつ)において、タスク状態を失敗にマークする更新処理自体が失敗した時のケースが考慮できていなかった。</p>
+<p>確かにコードベース上でエラーハンドリングはできているんだけれど、対象のタスクの状態がRDB上にあるせいか、それをうまく終端状態に持っていく処理が完全に漏れてた（design
+docにはstate machineを明記してあったんだけど）。</p>
+<p>単に丸投げせず、特に注意すべき点としてあげればよかったのだけれど、他にもセキュリティとかスケーラビリティとか欠かせないところがある中で、注意すべき点としてエージェントに指定すべきかどうかの判断は難しい。</p>
+<h2 id="まだ早かったのかも">まだ早かったのかも</h2>
+<p>自分は（諸事情により）GPT 6
+LunaをOpenCodeから使っていたが、もっと高性能のOpus
+5.5とかを使ってたら、こんな問題は起きなかったかもしれない。</p>
+<p>GPT 6 Lunaでケチケチしてるのが貧乏性すぎるのかなぁ...<br />
+GPT 6 Luna並のコスパの良さでOpus
+5.5並の性能が出るモデルが出てくれればなぁ...</p>
+<h2 id="herdrの使い方の変化">herdrの使い方の変化</h2>
+<p>ついでに言っておくと。</p>
+<p><a href="./setup-herdr.html">以前の記事</a>
+ではtmuxからherdr乗り換える前提でセットアップしていたが、結局tmuxからherdrを起動する形になった。</p>
+<p>どうも、細かなキーの反応の遅さとかキーバインドの反応の悪さが気になってしまう。なんか設定あるかもしれないけど。<br />
+この「気になる」が思考の邪魔になるし、結局レビューのためにvim開いたりするので、tmuxベースに戻ってしまった。</p>
+<p>ここまでくるとherdrを使うのが正しいのかわからなくなってくる。</p>
+<p>むしろ、</p>
+<p><a
+href="https://github.com/alexdumont/tmux-agents-panel">alexdumont/tmux-agents-panel</a>
+とか<br />
+<a href="https://github.com/raine/workmux">raine/workmux</a>とか <a
+href="https://github.com/hiroppy/tmux-agent-sidebar">hiroppy/tmux-agent-sidebar</a>
+とか<br />
+tmux体験の延長上のソリューションの方が良いかもしれない。</p>
+<p>エージェントを使った開発手法も、以前書いた <a
+href="./protocol-driven-development.html">Protocol-Driven
+Development</a>
+のアプローチの方がやはり自分（と自分が抱えている問題領域）には適しているのかもしれない。</p>
+<p>ちょっとまた、色々試してみる。</p>
+    </article>
+  </div>
+<footer>
+  <small>
+    <a href="https://thara.dev">thara.dev</a>
+    | &copy; 2026 Tomochika Hara
+  </small></footer>
+</body>
+</html>
